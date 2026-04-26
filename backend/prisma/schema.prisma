@@ -8,7 +8,7 @@ datasource db {
 }
 
 model User {
-  id        String   @id
+  id        Int      @id @default(autoincrement())
   email     String   @unique
   name      String
   lastName  String?
@@ -40,8 +40,8 @@ model Spot {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  userId String
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId Int
+  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   categoryId Int
   category   Category @relation(fields: [categoryId], references: [id], onDelete: Restrict)
