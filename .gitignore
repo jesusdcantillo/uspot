@@ -1,0 +1,73 @@
+# ------------------------------
+# Monorepo: NestJS (backend) + Next.js (frontend)
+# ------------------------------
+
+# Dependencies
+**/node_modules/
+/.pnp
+.pnp.*
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/versions
+
+# Build outputs
+**/dist/
+**/build/
+**/out/
+frontend/.next/
+backend/generated/prisma/
+
+# Caches and temp
+**/.turbo/
+**/.cache/
+**/.temp/
+**/.tmp/
+
+# Coverage and test output
+**/coverage/
+**/.nyc_output/
+
+# Logs and runtime files
+logs/
+**/*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+pids/
+**/*.pid
+**/*.pid.lock
+report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
+
+# Environment variables and secrets
+.env
+.env.*
+**/.env
+**/.env.*
+
+# Keep safe templates versioned
+!.env.example
+!**/.env.example
+!**/.env.*.example
+
+# Deployment/platform files
+frontend/.vercel/
+
+# TypeScript
+**/*.tsbuildinfo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Editors/IDEs
+.idea/
+*.sublime-workspace
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
