@@ -7,6 +7,12 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum ContextType {
+  CITY
+  UNIVERSITY
+  MALL
+}
+
 model User {
   id        Int      @id @default(autoincrement())
   email     String   @unique
@@ -16,7 +22,8 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  spots Spot[]
+  spots     Spot[]
+  favorites Favorite[]
 
   @@map("users")
 }
@@ -28,6 +35,18 @@ model Category {
   spots       Spot[]
 
   @@map("categories")
+}
+
+model Context {
+  id        Int         @id @default(autoincrement())
+  name      String
+  type      ContextType
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+
+  spots Spot[]
+
+  @@map("contexts")
 }
 
 model Spot {
@@ -46,10 +65,15 @@ model Spot {
   categoryId Int
   category   Category @relation(fields: [categoryId], references: [id], onDelete: Restrict)
 
-  images Image[]
+  contextId Int
+  context   Context @relation(fields: [contextId], references: [id], onDelete: Restrict)
+
+  images    Image[]
+  favorites Favorite[]
 
   @@index([userId])
   @@index([categoryId])
+  @@index([contextId])
   @@index([latitude, longitude])
   @@map("spots")
 }
@@ -64,4 +88,19 @@ model Image {
 
   @@index([spotId])
   @@map("images")
+}
+
+model Favorite {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  spotId    Int
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  spot Spot @relation(fields: [spotId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, spotId])
+  @@index([userId])
+  @@index([spotId])
+  @@map("favorites")
 }
