@@ -4,9 +4,17 @@ import { AppService } from './app.service';
 import { PrismaModule } from './prisma/prisma.module';
 import { CategoriesModule } from './categories/categories.module';
 import { SpotsModule } from './spots/spots.module';
+import { ContextsModule } from './contexts/contexts.module';
+import { FavoritesModule } from './favorites/favorites.module';
 
 @Module({
-  imports: [PrismaModule, CategoriesModule, SpotsModule],
+  imports: [
+    PrismaModule,
+    CategoriesModule,
+    SpotsModule,
+    ContextsModule,
+    FavoritesModule,
+  ],
   controllers: [AppController],
   providers: [AppService],
 })
