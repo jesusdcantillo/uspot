@@ -16,6 +16,10 @@ export class CreateSpotDto {
   @IsInt()
   categoryId!: number;
 
+  @Type(() => Number)
+  @IsInt()
+  contextId!: number;
+
   @IsString()
   @MinLength(2)
   title!: string;

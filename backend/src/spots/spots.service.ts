@@ -32,10 +32,20 @@ export class SpotsService {
       throw new NotFoundException('Category not found');
     }
 
+    const context = await this.prisma.context.findUnique({
+      where: { id: createSpotDto.contextId },
+      select: { id: true },
+    });
+
+    if (!context) {
+      throw new NotFoundException('Context not found');
+    }
+
     const spot = await this.prisma.spot.create({
       data: {
         userId: createSpotDto.userId,
         categoryId: createSpotDto.categoryId,
+        contextId: createSpotDto.contextId,
         title: createSpotDto.title,
         description: createSpotDto.description,
         latitude: createSpotDto.latitude,
