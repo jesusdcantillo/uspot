@@ -2,7 +2,6 @@ import {
   CONTEXT_DISPLAY_ORDER,
   CONTEXT_TYPE_DESCRIPTIONS,
   CONTEXT_TYPE_IMAGES,
-  FALLBACK_CONTEXTS,
   type ContextType,
   type OnboardingContext,
 } from "./onboarding";
@@ -32,9 +31,13 @@ function mapContexts(
     });
 }
 
-export async function getContexts(): Promise<OnboardingContext[]> {
+export async function getContexts(
+  cityId?: number,
+): Promise<OnboardingContext[]> {
   try {
-    const response = await fetch(`${API_BASE_URL}/contexts`, {
+    const query = cityId ? `?cityId=${cityId}` : "";
+
+    const response = await fetch(`${API_BASE_URL}/contexts${query}`, {
       method: "GET",
       cache: "no-store",
     });
@@ -49,12 +52,8 @@ export async function getContexts(): Promise<OnboardingContext[]> {
       type: ContextType;
     }>;
 
-    if (items.length === 0) {
-      return FALLBACK_CONTEXTS;
-    }
-
     return mapContexts(items);
   } catch {
-    return FALLBACK_CONTEXTS;
+    return [];
   }
 }
