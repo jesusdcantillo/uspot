@@ -1,18 +1,24 @@
 "use client";
 
+import type { CityRecord } from "@/lib/cities";
+
 type CitySelectorProps = {
   selectedCountry: string | null;
-  selectedCity: string | null;
-  onChange: (city: string) => void;
+  selectedCityId: number | null;
+  cities: CityRecord[];
+  onChange: (city: CityRecord) => void;
 };
 
 export function CitySelector({
   selectedCountry,
-  selectedCity,
+  selectedCityId,
+  cities,
   onChange,
 }: CitySelectorProps) {
-  const cities =
-    selectedCountry === "Colombia" ? ["Barranquilla", "Bogotá"] : [];
+  const availableCities =
+    selectedCountry === "Colombia"
+      ? cities.filter((city) => city.country === "COLOMBIA")
+      : [];
 
   return (
     <section className="rounded-[1.75rem] border border-white/60 bg-white/80 p-5 shadow-[0_12px_40px_rgba(37,99,235,0.08)] backdrop-blur-xl">
@@ -26,12 +32,12 @@ export function CitySelector({
       </div>
 
       <div className="space-y-3">
-        {cities.map((city) => {
-          const active = selectedCity === city;
+        {availableCities.map((city) => {
+          const active = selectedCityId === city.id;
 
           return (
             <button
-              key={city}
+              key={city.id}
               type="button"
               onClick={() => onChange(city)}
               className={`flex w-full items-center justify-between rounded-[1.25rem] border px-4 py-4 text-left transition ${
@@ -41,7 +47,7 @@ export function CitySelector({
               }`}
             >
               <div>
-                <p className="text-base font-semibold">{city}</p>
+                <p className="text-base font-semibold">{city.name}</p>
                 <p
                   className={`mt-1 text-sm ${active ? "text-white/80" : "text-[#434655]"}`}
                 >
