@@ -74,3 +74,6 @@ Thumbs.db
 
 # Docs
 **/docs/
+
+# Stich
+**/.stitch-ref/
