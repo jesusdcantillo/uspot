@@ -34,6 +34,9 @@ export class SpotResponseDto {
   @IsInt()
   userId!: number;
 
+  @IsInt()
+  contextId!: number;
+
   @ValidateNested()
   @Type(() => CategoryResponseDto)
   category!: CategoryResponseDto;
