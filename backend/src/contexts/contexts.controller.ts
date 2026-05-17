@@ -1,4 +1,4 @@
-import { Controller, Get } from '@nestjs/common';
+import { Controller, Get, ParseIntPipe, Query } from '@nestjs/common';
 import { ContextResponseDto } from './dto/context-response.dto';
 import { ContextsService } from './contexts.service';
 
@@ -7,7 +7,9 @@ export class ContextsController {
   constructor(private readonly contextsService: ContextsService) {}
 
   @Get()
-  findAll(): Promise<ContextResponseDto[]> {
-    return this.contextsService.findAll();
+  findAll(
+    @Query('cityId', new ParseIntPipe({ optional: true })) cityId?: number,
+  ): Promise<ContextResponseDto[]> {
+    return this.contextsService.findAll(cityId);
   }
 }

@@ -7,8 +7,9 @@ import { ContextResponseDto } from './dto/context-response.dto';
 export class ContextsService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async findAll(): Promise<ContextResponseDto[]> {
+  async findAll(cityId?: number): Promise<ContextResponseDto[]> {
     const contexts: Context[] = await this.prisma.context.findMany({
+      where: cityId ? { cityId } : undefined,
       orderBy: [{ type: 'asc' }, { name: 'asc' }],
     });
 
