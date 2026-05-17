@@ -1,27 +1,38 @@
 "use client";
 
-import { useMemo } from "react";
+import { Suspense, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import {
   OnboardingProvider,
   useOnboarding,
 } from "@/components/onboarding/onboarding-provider";
 import { OnboardingLayout } from "@/components/onboarding/onboarding-layout";
+import { useSearchParams } from "next/navigation";
 
 function DashboardShell() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { state } = useOnboarding();
   const { clearOnboarding } = useOnboarding();
 
-  const mode = state.explorationMode ?? "authenticated";
+  const mode =
+    searchParams.get("mode") ?? state.explorationMode ?? "authenticated";
 
   const summary = useMemo(() => {
     return {
-      country: state.selectedCountry ?? "Colombia",
-      city: state.selectedCity ?? "Sin ciudad",
-      context: state.selectedContext?.name ?? "Sin contexto",
+      cityId: state.selectedCityId ?? "Sin ciudad",
+      cityName: state.selectedCityName ?? "Sin ciudad",
+      contextId: state.selectedContextId ?? "Sin contexto",
+      contextName: state.selectedContextName ?? "Sin contexto",
+      contextType: state.selectedContextType ?? "Sin tipo",
     };
-  }, [state.selectedCity, state.selectedContext?.name, state.selectedCountry]);
+  }, [
+    state.selectedCityId,
+    state.selectedCityName,
+    state.selectedContextId,
+    state.selectedContextName,
+    state.selectedContextType,
+  ]);
 
   return (
     <OnboardingLayout>
@@ -40,18 +51,18 @@ function DashboardShell() {
         <div className="mt-8 grid gap-3 text-left sm:grid-cols-3">
           <div className="rounded-2xl bg-[#f7f9fb] p-4">
             <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#434655]">
-              País
+              Ciudad
             </p>
             <p className="mt-2 text-lg font-semibold text-[#191c1e]">
-              {summary.country}
+              {summary.cityName}
             </p>
           </div>
           <div className="rounded-2xl bg-[#f7f9fb] p-4">
             <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#434655]">
-              Ciudad
+              Ciudad ID
             </p>
             <p className="mt-2 text-lg font-semibold text-[#191c1e]">
-              {summary.city}
+              {summary.cityId}
             </p>
           </div>
           <div className="rounded-2xl bg-[#f7f9fb] p-4">
@@ -59,7 +70,26 @@ function DashboardShell() {
               Contexto
             </p>
             <p className="mt-2 text-lg font-semibold text-[#191c1e]">
-              {summary.context}
+              {summary.contextName}
+            </p>
+          </div>
+        </div>
+
+        <div className="mt-3 grid gap-3 text-left sm:grid-cols-2">
+          <div className="rounded-2xl bg-[#f7f9fb] p-4">
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#434655]">
+              Contexto ID
+            </p>
+            <p className="mt-2 text-lg font-semibold text-[#191c1e]">
+              {summary.contextId}
+            </p>
+          </div>
+          <div className="rounded-2xl bg-[#f7f9fb] p-4">
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#434655]">
+              Tipo
+            </p>
+            <p className="mt-2 text-lg font-semibold text-[#191c1e]">
+              {summary.contextType}
             </p>
           </div>
         </div>
@@ -69,8 +99,8 @@ function DashboardShell() {
         </div>
 
         <p className="mt-4 text-sm text-[#434655]">
-          El onboarding quedó persistido en localStorage y sobrevivirá
-          refreshes.
+          La ciudad y el contexto seleccionados quedan persistidos en
+          localStorage para reutilizarlos en el dashboard.
         </p>
 
         <div className="mt-6 flex justify-center">
@@ -93,7 +123,9 @@ function DashboardShell() {
 export default function DashboardPage() {
   return (
     <OnboardingProvider>
-      <DashboardShell />
+      <Suspense fallback={null}>
+        <DashboardShell />
+      </Suspense>
     </OnboardingProvider>
   );
 }
