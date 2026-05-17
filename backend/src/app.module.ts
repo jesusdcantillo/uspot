@@ -6,6 +6,7 @@ import { CategoriesModule } from './categories/categories.module';
 import { SpotsModule } from './spots/spots.module';
 import { ContextsModule } from './contexts/contexts.module';
 import { FavoritesModule } from './favorites/favorites.module';
+import { CitiesModule } from './cities/cities.module';
 
 @Module({
   imports: [
@@ -14,6 +15,7 @@ import { FavoritesModule } from './favorites/favorites.module';
     SpotsModule,
     ContextsModule,
     FavoritesModule,
+    CitiesModule,
   ],
   controllers: [AppController],
   providers: [AppService],
