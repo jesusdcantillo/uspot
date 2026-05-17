@@ -15,17 +15,19 @@ import { LoginModal } from "./login-modal";
 import { OnboardingLayout } from "./onboarding-layout";
 import { ContextTypeGrid } from "./context-type-grid";
 import { useOnboarding } from "./onboarding-provider";
+import { getContexts } from "@/lib/contexts";
+import { getCities, type CityRecord } from "@/lib/cities";
 
 function getInitialStep(
   country: string | null,
-  city: string | null,
-  context: OnboardingContext | null,
+  cityId: number | null,
+  contextId: number | null,
 ): OnboardingStep {
-  if (context) {
+  if (contextId) {
     return "context";
   }
 
-  if (country || city) {
+  if (country || cityId) {
     return "location";
   }
 
@@ -43,22 +45,62 @@ export function OnboardingFlow() {
     completeOnboarding,
   } = useOnboarding();
   const [manualStep, setManualStep] = useState<OnboardingStep | null>(null);
-  const [
-    ,/* contexts */
-    /* setContexts */
-  ] = useState<OnboardingContext[]>([]);
-  const [
-    ,/* loadingContexts */
-    /* setLoadingContexts */
-  ] = useState(false);
+  const [cities, setCities] = useState<CityRecord[]>([]);
+  const [contexts, setContexts] = useState<OnboardingContext[]>([]);
+  const [loadingContexts, setLoadingContexts] = useState(true);
+  const [loadingCities, setLoadingCities] = useState(true);
   const [loginModalOpen, setLoginModalOpen] = useState(false);
   const step =
     manualStep ??
     getInitialStep(
       state.selectedCountry,
-      state.selectedCity,
-      state.selectedContext,
+      state.selectedCityId,
+      state.selectedContextId,
     );
+
+  useEffect(() => {
+    let isMounted = true;
+
+    void (async () => {
+      setLoadingCities(true);
+      const items = await getCities();
+
+      if (isMounted) {
+        setCities(items);
+        setLoadingCities(false);
+      }
+    })();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    if (!state.selectedCityId) {
+      setContexts([]);
+      setLoadingContexts(false);
+      return () => {
+        isMounted = false;
+      };
+    }
+
+    void (async () => {
+      setLoadingContexts(true);
+      const items = await getContexts(state.selectedCityId ?? undefined);
+
+      if (isMounted) {
+        setContexts(items);
+        setLoadingContexts(false);
+      }
+    })();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [state.selectedCityId]);
 
   useEffect(() => {
     if (!state.hasCompletedOnboarding) {
@@ -70,9 +112,6 @@ export function OnboardingFlow() {
     );
   }, [router, state.explorationMode, state.hasCompletedOnboarding]);
 
-  // Note: onboarding shows context TYPES (CITY/MALL/UNIVERSITY) instead
-  // of individual contexts; no network fetch required here.
-
   const selectedCountry = useMemo(() => {
     return (
       COUNTRIES.find((country) => country.name === state.selectedCountry) ??
@@ -80,7 +119,7 @@ export function OnboardingFlow() {
     );
   }, [state.selectedCountry]);
 
-  const selectedContextId = state.selectedContext?.id ?? null;
+  const selectedContextId = state.selectedContextId;
 
   const goToLocationStep = (mode: "authenticated" | "guest") => {
     setExplorationMode(mode);
@@ -195,8 +234,11 @@ export function OnboardingFlow() {
               />
               <CitySelector
                 selectedCountry={state.selectedCountry}
-                selectedCity={state.selectedCity}
-                onChange={setSelectedCity}
+                selectedCityId={state.selectedCityId}
+                cities={cities}
+                onChange={(city) => {
+                  setSelectedCity({ cityId: city.id, cityName: city.name });
+                }}
               />
             </div>
 
@@ -204,7 +246,7 @@ export function OnboardingFlow() {
               <button
                 type="button"
                 onClick={handleLocationContinue}
-                disabled={!state.selectedCountry || !state.selectedCity}
+                disabled={!state.selectedCountry || !state.selectedCityId}
                 className="inline-flex min-w-56 items-center justify-center rounded-2xl bg-[#004ac6] px-6 py-4 text-sm font-semibold text-white shadow-[0_12px_30px_rgba(0,74,198,0.18)] transition hover:bg-[#2563eb] disabled:cursor-not-allowed disabled:bg-[#c3c6d7]"
               >
                 Continuar
@@ -234,22 +276,37 @@ export function OnboardingFlow() {
                 {state.selectedCountry ?? selectedCountry?.name ?? "Colombia"}
               </span>
               <span className="rounded-full bg-white/80 px-4 py-2 font-semibold shadow-sm">
-                Ciudad: {state.selectedCity ?? "Sin seleccionar"}
+                Ciudad: {state.selectedCityName ?? "Sin seleccionar"}
               </span>
             </div>
 
-            <ContextTypeGrid
-              selectedContextId={selectedContextId}
-              onSelect={(context) => {
-                setSelectedContext(context);
-              }}
-            />
+            {loadingCities || loadingContexts ? (
+              <div className="rounded-[1.5rem] border border-white/70 bg-white/80 p-6 text-center text-sm text-[#434655] shadow-[0_12px_40px_rgba(37,99,235,0.08)]">
+                Cargando ciudades y contexts reales...
+              </div>
+            ) : contexts.length === 0 ? (
+              <div className="rounded-[1.5rem] border border-white/70 bg-white/80 p-6 text-center text-sm text-[#434655] shadow-[0_12px_40px_rgba(37,99,235,0.08)]">
+                No se pudieron cargar contexts reales desde la API.
+              </div>
+            ) : (
+              <ContextTypeGrid
+                contexts={contexts}
+                selectedContextId={selectedContextId}
+                onSelect={(context) => {
+                  setSelectedContext({
+                    contextId: context.id,
+                    contextName: context.name,
+                    contextType: context.type,
+                  });
+                }}
+              />
+            )}
 
             <div className="flex justify-center pt-2">
               <button
                 type="button"
                 onClick={handleContextContinue}
-                disabled={!state.selectedContext}
+                disabled={!state.selectedContextId}
                 className="inline-flex min-w-56 items-center justify-center rounded-2xl bg-[#004ac6] px-6 py-4 text-sm font-semibold text-white shadow-[0_12px_30px_rgba(0,74,198,0.18)] transition hover:bg-[#2563eb] disabled:cursor-not-allowed disabled:bg-[#c3c6d7]"
               >
                 Comenzar
