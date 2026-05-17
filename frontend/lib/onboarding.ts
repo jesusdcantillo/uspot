@@ -6,10 +6,20 @@ export type CountryOption = {
   code: string;
   name: string;
   flagLabel: string;
-  cities: string[];
 };
 
 export type ContextType = "CITY" | "UNIVERSITY" | "MALL";
+
+export type ContextSelection = {
+  contextId: number;
+  contextName: string;
+  contextType: ContextType;
+};
+
+export type CitySelection = {
+  cityId: number;
+  cityName: string;
+};
 
 export type OnboardingContext = {
   id: number;
@@ -21,8 +31,11 @@ export type OnboardingContext = {
 
 export type StoredOnboardingState = {
   selectedCountry: string | null;
-  selectedCity: string | null;
-  selectedContext: OnboardingContext | null;
+  selectedCityId: number | null;
+  selectedCityName: string | null;
+  selectedContextId: number | null;
+  selectedContextName: string | null;
+  selectedContextType: ContextType | null;
   explorationMode: ExplorationMode | null;
   hasCompletedOnboarding: boolean;
 };
@@ -34,7 +47,6 @@ export const COUNTRIES: CountryOption[] = [
     code: "CO",
     name: "Colombia",
     flagLabel: "CO",
-    cities: ["Barranquilla", "Bogotá"],
   },
 ];
 
@@ -57,30 +69,6 @@ export const CONTEXT_TYPE_IMAGES: Record<ContextType, string> = {
   MALL: "/images/cards-onboarding/mall.webp",
 };
 
-export const FALLBACK_CONTEXTS: OnboardingContext[] = [
-  {
-    id: 1,
-    name: "Universidad de la Costa",
-    type: "UNIVERSITY",
-    description: CONTEXT_TYPE_DESCRIPTIONS.UNIVERSITY,
-    imageSrc: CONTEXT_TYPE_IMAGES.UNIVERSITY,
-  },
-  {
-    id: 2,
-    name: "Portal del Prado",
-    type: "MALL",
-    description: CONTEXT_TYPE_DESCRIPTIONS.MALL,
-    imageSrc: CONTEXT_TYPE_IMAGES.MALL,
-  },
-  {
-    id: 3,
-    name: "Barranquilla Centro",
-    type: "CITY",
-    description: CONTEXT_TYPE_DESCRIPTIONS.CITY,
-    imageSrc: CONTEXT_TYPE_IMAGES.CITY,
-  },
-];
-
 export const CONTEXT_DISPLAY_ORDER: ContextType[] = [
   "UNIVERSITY",
   "MALL",
@@ -89,20 +77,17 @@ export const CONTEXT_DISPLAY_ORDER: ContextType[] = [
 
 export const INITIAL_ONBOARDING_STATE: StoredOnboardingState = {
   selectedCountry: null,
-  selectedCity: null,
-  selectedContext: null,
+  selectedCityId: null,
+  selectedCityName: null,
+  selectedContextId: null,
+  selectedContextName: null,
+  selectedContextType: null,
   explorationMode: null,
   hasCompletedOnboarding: false,
 };
 
 export function getCountryByName(name: string): CountryOption | undefined {
   return COUNTRIES.find((country) => country.name === name);
-}
-
-export function getCityOptions(countryName: string | null): string[] {
-  const country = countryName ? getCountryByName(countryName) : undefined;
-
-  return country?.cities ?? [];
 }
 
 export function hasActiveAuthSession(): boolean {
