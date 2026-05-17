@@ -65,8 +65,14 @@ export class SpotsService {
     return this.mapSpot(spot);
   }
 
-  async findAll(): Promise<SpotResponseDto[]> {
+  async findAll(contextId?: number): Promise<SpotResponseDto[]> {
     const spots = await this.prisma.spot.findMany({
+      where:
+        typeof contextId === 'number'
+          ? {
+              contextId,
+            }
+          : undefined,
       orderBy: {
         createdAt: 'desc',
       },
@@ -112,6 +118,7 @@ export class SpotsService {
       longitude: spot.longitude,
       address: spot.address ?? undefined,
       userId: spot.userId,
+      contextId: spot.contextId,
       category: {
         id: spot.category.id,
         name: spot.category.name,

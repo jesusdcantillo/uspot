@@ -2,6 +2,8 @@ import {
   Body,
   Controller,
   Get,
+  BadRequestException,
+  Query,
   Param,
   ParseIntPipe,
   Post,
@@ -20,7 +22,17 @@ export class SpotsController {
   }
 
   @Get()
-  findAll(): Promise<SpotResponseDto[]> {
+  findAll(@Query('contextId') contextId?: string): Promise<SpotResponseDto[]> {
+    if (contextId !== undefined) {
+      const parsedContextId = Number(contextId);
+
+      if (Number.isNaN(parsedContextId)) {
+        throw new BadRequestException('contextId must be a valid number');
+      }
+
+      return this.spotsService.findAll(parsedContextId);
+    }
+
     return this.spotsService.findAll();
   }
 
