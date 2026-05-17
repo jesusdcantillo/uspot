@@ -18,6 +18,7 @@ export type Spot = {
   longitude: number;
   address?: string;
   userId: number;
+  contextId: number;
   category: Category;
   images: SpotImage[];
   createdAt: string;
@@ -26,8 +27,11 @@ export type Spot = {
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001";
 
-export async function getSpots(): Promise<Spot[]> {
-  const response = await fetch(`${API_BASE_URL}/spots`, {
+export async function getSpots(contextId?: number): Promise<Spot[]> {
+  const queryString =
+    typeof contextId === "number" ? `?contextId=${contextId}` : "";
+
+  const response = await fetch(`${API_BASE_URL}/spots${queryString}`, {
     method: "GET",
     cache: "no-store",
   });
