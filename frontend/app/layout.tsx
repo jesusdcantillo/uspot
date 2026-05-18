@@ -10,7 +10,7 @@ const plusJakartaSans = Plus_Jakarta_Sans({
 
 export const metadata: Metadata = {
   title: "USpot",
-  description: "Explora contextos y spots con onboarding contextual.",
+  description: "Explora espacios y spots con onboarding contextual.",
 };
 
 export default function RootLayout({
