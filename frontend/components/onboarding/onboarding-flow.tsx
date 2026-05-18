@@ -93,11 +93,18 @@ export function OnboardingFlow() {
         return;
       }
 
-      const items = await getContexts(state.selectedCityId ?? undefined);
+      try {
+        const items = await getContexts(state.selectedCityId ?? undefined);
 
-      if (isMounted) {
-        setContexts(items);
-        setLoadingContexts(false);
+        if (isMounted) {
+          setContexts(items);
+          setLoadingContexts(false);
+        }
+      } catch {
+        if (isMounted) {
+          setContexts([]);
+          setLoadingContexts(false);
+        }
       }
     })();
 
@@ -261,7 +268,7 @@ export function OnboardingFlow() {
                 ¿Dónde quieres explorar?
               </h1>
               <p className="mt-4 text-base leading-7 text-[#434655] sm:text-lg">
-                Selecciona país y ciudad para continuar con el contexto.
+                Selecciona país y ciudad para continuar con el espacio.
               </p>
             </div>
 
@@ -305,8 +312,7 @@ export function OnboardingFlow() {
                 ¿Qué espacio quieres explorar?
               </h1>
               <p className="mt-4 text-base leading-7 text-[#434655] sm:text-lg">
-                Elige el contexto que mejor describe el lugar que vas a
-                recorrer.
+                Elige el espacio que mejor describe el lugar que vas a recorrer.
               </p>
             </div>
 
@@ -322,11 +328,11 @@ export function OnboardingFlow() {
 
             {loadingCities || loadingContexts ? (
               <div className="rounded-[1.5rem] border border-white/70 bg-white/80 p-6 text-center text-sm text-[#434655] shadow-[0_12px_40px_rgba(37,99,235,0.08)]">
-                Cargando ciudades y contexts reales...
+                Cargando ciudades y espacios reales...
               </div>
             ) : contexts.length === 0 ? (
               <div className="rounded-[1.5rem] border border-white/70 bg-white/80 p-6 text-center text-sm text-[#434655] shadow-[0_12px_40px_rgba(37,99,235,0.08)]">
-                No se pudieron cargar contexts reales desde la API.
+                No se pudieron cargar espacios reales desde la API.
               </div>
             ) : (
               <ContextTypeGrid
