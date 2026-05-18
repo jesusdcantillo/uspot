@@ -1,6 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
+import { BrandLogo } from "@/components/shared/brand-logo";
 
 type OnboardingLayoutProps = {
   children: ReactNode;
@@ -23,9 +24,7 @@ export function OnboardingLayout({
 
       <header className="relative z-10 border-b border-white/60 bg-white/75 backdrop-blur-xl">
         <div className="mx-auto flex w-full max-w-7xl items-center justify-between px-5 py-4 sm:px-6 lg:px-8">
-          <div className="text-[1.5rem] font-extrabold tracking-tighter text-[#004ac6] sm:text-[1.6rem]">
-            USpot
-          </div>
+          <BrandLogo />
           {action ? (
             <div className="flex items-center gap-3">{action}</div>
           ) : null}
