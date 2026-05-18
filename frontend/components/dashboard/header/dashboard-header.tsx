@@ -7,7 +7,6 @@ type DashboardHeaderProps = {
   contextName: string;
   contextType: ContextType;
   statusLabel: string;
-  onDiscover: () => void;
   onResetFlow: () => void;
 };
 
@@ -16,7 +15,6 @@ export function DashboardHeader({
   contextName,
   contextType,
   statusLabel,
-  onDiscover,
   onResetFlow,
 }: DashboardHeaderProps) {
   return (
@@ -42,22 +40,13 @@ export function DashboardHeader({
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={onResetFlow}
-            className="rounded-full border border-[#d7deea] bg-white px-3 py-2 text-xs font-semibold text-[#434655] transition hover:border-[#004ac6]/40 hover:text-[#004ac6]"
-          >
-            Reiniciar flujo
-          </button>
-          <button
-            type="button"
-            onClick={onDiscover}
-            className="rounded-full border border-[#d7deea] bg-white px-4 py-2 text-sm font-semibold text-[#191c1e] transition hover:border-[#004ac6]/40 hover:text-[#004ac6]"
-          >
-            Descubre
-          </button>
-        </div>
+        <button
+          type="button"
+          onClick={onResetFlow}
+          className="rounded-full border border-[#d7deea] bg-white px-3 py-2 text-xs font-semibold text-[#434655] transition hover:border-[#004ac6]/40 hover:text-[#004ac6]"
+        >
+          Reiniciar flujo
+        </button>
       </div>
     </header>
   );
