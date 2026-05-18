@@ -27,6 +27,9 @@ export type OnboardingContext = {
   type: ContextType;
   description: string;
   imageSrc: string;
+  latitude?: number | null;
+  longitude?: number | null;
+  zoom?: number | null;
 };
 
 export type StoredOnboardingState = {
