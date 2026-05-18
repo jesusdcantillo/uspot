@@ -1,5 +1,4 @@
 import { Suspense } from "react";
-import { OnboardingProvider } from "@/components/onboarding/onboarding-provider";
 import { OnboardingFlow } from "@/components/onboarding/onboarding-flow";
 
 function OnboardingFallback() {
@@ -21,10 +20,8 @@ function OnboardingFallback() {
 
 export default function Home() {
   return (
-    <OnboardingProvider>
-      <Suspense fallback={<OnboardingFallback />}>
-        <OnboardingFlow />
-      </Suspense>
-    </OnboardingProvider>
+    <Suspense fallback={<OnboardingFallback />}>
+      <OnboardingFlow />
+    </Suspense>
   );
 }
