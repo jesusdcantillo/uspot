@@ -1,5 +1,8 @@
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001";
 
+let citiesRequest: Promise<CityRecord[]> | null = null;
+const IN_FLIGHT_CACHE_TTL_MS = 350;
+
 export type CityRecord = {
   id: number;
   name: string;
@@ -7,17 +10,41 @@ export type CityRecord = {
 };
 
 export async function getCities(): Promise<CityRecord[]> {
+  if (citiesRequest) {
+    return citiesRequest;
+  }
+
+  // Instrumentation: log when a new cities request starts
   try {
-    const response = await fetch(`${API_BASE_URL}/cities`, {
-      method: "GET",
-      cache: "no-store",
-    });
+    // eslint-disable-next-line no-console
+    console.debug("getCities:start", { time: Date.now() });
+  } catch (e) {
+    // ignore
+  }
 
-    if (!response.ok) {
-      throw new Error("No se pudieron cargar las ciudades");
+  citiesRequest = (async () => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/cities`, {
+        method: "GET",
+        cache: "no-store",
+      });
+
+      if (!response.ok) {
+        throw new Error("No se pudieron cargar las ciudades");
+      }
+
+      return (await response.json()) as CityRecord[];
+    } catch {
+      return [];
+    } finally {
+      setTimeout(() => {
+        citiesRequest = null;
+      }, IN_FLIGHT_CACHE_TTL_MS);
     }
+  })();
 
-    return (await response.json()) as CityRecord[];
+  try {
+    return await citiesRequest;
   } catch {
     return [];
   }

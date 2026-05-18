@@ -29,32 +29,59 @@ export type Spot = {
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001";
 
+const spotsRequestCache = new Map<number | null, Promise<Spot[]>>();
+const IN_FLIGHT_CACHE_TTL_MS = 350;
+
 export async function getSpots(contextId?: number): Promise<Spot[]> {
   const queryString =
     typeof contextId === "number" ? `?contextId=${contextId}` : "";
+  const cacheKey = contextId ?? null;
 
-  let response: Response;
+  const existingRequest = spotsRequestCache.get(cacheKey);
 
-  try {
-    response = await fetchWithTimeout(`${API_BASE_URL}/spots${queryString}`, {
-      method: "GET",
-      cache: "no-store",
-    });
-  } catch (error) {
-    if (error instanceof UspotFetchError) {
-      throw error;
+  if (existingRequest) {
+    return existingRequest;
+  }
+
+  const request = (async () => {
+    // Instrumentation: log when a new spots request starts
+    try {
+      // eslint-disable-next-line no-console
+      console.debug("getSpots:start", { contextId, time: Date.now() });
+    } catch (e) {
+      // ignore
+    }
+    let response: Response;
+
+    try {
+      response = await fetchWithTimeout(`${API_BASE_URL}/spots${queryString}`, {
+        method: "GET",
+        cache: "no-store",
+      });
+    } catch (error) {
+      if (error instanceof UspotFetchError) {
+        throw error;
+      }
+
+      throw new UspotFetchError("No se pudieron cargar los spots", "network", {
+        cause: error,
+      });
     }
 
-    throw new UspotFetchError("No se pudieron cargar los spots", "network", {
-      cause: error,
-    });
-  }
+    if (!response.ok) {
+      throw new UspotFetchError("No se pudieron cargar los spots", "server", {
+        status: response.status,
+      });
+    }
 
-  if (!response.ok) {
-    throw new UspotFetchError("No se pudieron cargar los spots", "server", {
-      status: response.status,
-    });
-  }
+    return (await response.json()) as Spot[];
+  })().finally(() => {
+    setTimeout(() => {
+      spotsRequestCache.delete(cacheKey);
+    }, IN_FLIGHT_CACHE_TTL_MS);
+  });
 
-  return (await response.json()) as Spot[];
+  spotsRequestCache.set(cacheKey, request);
+
+  return request;
 }
