@@ -1,3 +1,5 @@
+import { fetchWithTimeout, UspotFetchError } from "./fetch-with-timeout";
+
 export type Category = {
   id: number;
   name: string;
@@ -31,13 +33,27 @@ export async function getSpots(contextId?: number): Promise<Spot[]> {
   const queryString =
     typeof contextId === "number" ? `?contextId=${contextId}` : "";
 
-  const response = await fetch(`${API_BASE_URL}/spots${queryString}`, {
-    method: "GET",
-    cache: "no-store",
-  });
+  let response: Response;
+
+  try {
+    response = await fetchWithTimeout(`${API_BASE_URL}/spots${queryString}`, {
+      method: "GET",
+      cache: "no-store",
+    });
+  } catch (error) {
+    if (error instanceof UspotFetchError) {
+      throw error;
+    }
+
+    throw new UspotFetchError("No se pudieron cargar los spots", "network", {
+      cause: error,
+    });
+  }
 
   if (!response.ok) {
-    throw new Error("No se pudieron cargar los spots");
+    throw new UspotFetchError("No se pudieron cargar los spots", "server", {
+      status: response.status,
+    });
   }
 
   return (await response.json()) as Spot[];
