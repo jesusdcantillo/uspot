@@ -30,6 +30,27 @@ body {
   overflow-x: hidden;
 }
 
+@keyframes uspot-shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+.uspot-skeleton {
+  background-image: linear-gradient(
+    90deg,
+    rgba(219, 225, 255, 0.42) 0%,
+    rgba(255, 255, 255, 0.95) 45%,
+    rgba(219, 225, 255, 0.42) 100%
+  );
+  background-size: 200% 100%;
+  animation: uspot-shimmer 1.5s linear infinite;
+}
+
 button,
 input,
 textarea,
