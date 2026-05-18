@@ -15,7 +15,7 @@ export function DashboardSpotsBar({ spots }: DashboardSpotsBarProps) {
             Spots destacados
           </p>
           <h2 className="mt-1 text-lg font-semibold tracking-tight text-[#191c1e]">
-            Explora el contexto
+            Explora el espacio
           </h2>
         </div>
 
@@ -60,7 +60,7 @@ export function DashboardSpotsBar({ spots }: DashboardSpotsBarProps) {
                   <p className="mt-1 truncate text-xs leading-5 text-[#6a7080]">
                     {spot.address ??
                       spot.category.description ??
-                      "Spot contextual"}
+                      "Spot del espacio"}
                   </p>
                 </div>
 
