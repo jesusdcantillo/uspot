@@ -2,7 +2,9 @@
 
 import {
   createContext,
+  useCallback,
   useContext,
+  useMemo,
   useSyncExternalStore,
   type ReactNode,
 } from "react";
@@ -33,30 +35,19 @@ const OnboardingStoreContext = createContext<Omit<
 let currentState: StoredOnboardingState = INITIAL_ONBOARDING_STATE;
 const listeners = new Set<() => void>();
 
-function isContextSelection(value: unknown): value is ContextSelection {
-  if (!value || typeof value !== "object") {
-    return false;
-  }
-
-  const candidate = value as Partial<ContextSelection>;
-
+function areOnboardingStatesEqual(
+  left: StoredOnboardingState,
+  right: StoredOnboardingState,
+) {
   return (
-    typeof candidate.contextId === "number" &&
-    typeof candidate.contextName === "string" &&
-    typeof candidate.contextType === "string"
-  );
-}
-
-function isCitySelection(value: unknown): value is CitySelection {
-  if (!value || typeof value !== "object") {
-    return false;
-  }
-
-  const candidate = value as Partial<CitySelection>;
-
-  return (
-    typeof candidate.cityId === "number" &&
-    typeof candidate.cityName === "string"
+    left.selectedCountry === right.selectedCountry &&
+    left.selectedCityId === right.selectedCityId &&
+    left.selectedCityName === right.selectedCityName &&
+    left.selectedContextId === right.selectedContextId &&
+    left.selectedContextName === right.selectedContextName &&
+    left.selectedContextType === right.selectedContextType &&
+    left.explorationMode === right.explorationMode &&
+    left.hasCompletedOnboarding === right.hasCompletedOnboarding
   );
 }
 
@@ -66,100 +57,33 @@ function readStoredState(): StoredOnboardingState {
   }
 
   try {
-    const rawState = window.localStorage.getItem(ONBOARDING_STORAGE_KEY);
+    const raw = window.localStorage.getItem(ONBOARDING_STORAGE_KEY);
 
-    if (!rawState) {
-      return INITIAL_ONBOARDING_STATE;
-    }
+    if (!raw) return INITIAL_ONBOARDING_STATE;
 
-    const parsedState = JSON.parse(rawState) as unknown;
+    const parsed = JSON.parse(raw) as Partial<StoredOnboardingState>;
 
-    const normalizedState: StoredOnboardingState = {
-      ...INITIAL_ONBOARDING_STATE,
+    return {
+      selectedCountry:
+        parsed.selectedCountry ?? INITIAL_ONBOARDING_STATE.selectedCountry,
+      selectedCityId:
+        parsed.selectedCityId ?? INITIAL_ONBOARDING_STATE.selectedCityId,
+      selectedCityName:
+        parsed.selectedCityName ?? INITIAL_ONBOARDING_STATE.selectedCityName,
+      selectedContextId:
+        parsed.selectedContextId ?? INITIAL_ONBOARDING_STATE.selectedContextId,
+      selectedContextName:
+        parsed.selectedContextName ??
+        INITIAL_ONBOARDING_STATE.selectedContextName,
+      selectedContextType:
+        parsed.selectedContextType ??
+        INITIAL_ONBOARDING_STATE.selectedContextType,
+      explorationMode:
+        parsed.explorationMode ?? INITIAL_ONBOARDING_STATE.explorationMode,
+      hasCompletedOnboarding:
+        parsed.hasCompletedOnboarding ??
+        INITIAL_ONBOARDING_STATE.hasCompletedOnboarding,
     };
-
-    if (parsedState && typeof parsedState === "object") {
-      const rawObject = parsedState as Record<string, unknown>;
-
-      if (typeof rawObject.selectedCountry === "string") {
-        normalizedState.selectedCountry = rawObject.selectedCountry;
-      }
-
-      if (isCitySelection(parsedState)) {
-        normalizedState.selectedCityId = parsedState.cityId;
-        normalizedState.selectedCityName = parsedState.cityName;
-      } else {
-        if (typeof rawObject.selectedCityId === "number") {
-          normalizedState.selectedCityId = rawObject.selectedCityId;
-        }
-
-        if (typeof rawObject.selectedCityName === "string") {
-          normalizedState.selectedCityName = rawObject.selectedCityName;
-        } else if (typeof rawObject.selectedCity === "string") {
-          normalizedState.selectedCityName = rawObject.selectedCity;
-        }
-      }
-
-      if (isContextSelection(parsedState)) {
-        normalizedState.selectedContextId = parsedState.contextId;
-        normalizedState.selectedContextName = parsedState.contextName;
-        normalizedState.selectedContextType = parsedState.contextType;
-      } else {
-        if (typeof rawObject.selectedContextId === "number") {
-          normalizedState.selectedContextId = rawObject.selectedContextId;
-        }
-
-        if (typeof rawObject.selectedContextName === "string") {
-          normalizedState.selectedContextName = rawObject.selectedContextName;
-        }
-
-        if (
-          rawObject.selectedContextType === "CITY" ||
-          rawObject.selectedContextType === "UNIVERSITY" ||
-          rawObject.selectedContextType === "MALL"
-        ) {
-          normalizedState.selectedContextType = rawObject.selectedContextType;
-        } else if (
-          rawObject.selectedContext &&
-          typeof rawObject.selectedContext === "object"
-        ) {
-          const nestedContext = rawObject.selectedContext as Record<
-            string,
-            unknown
-          >;
-
-          if (typeof nestedContext.contextId === "number") {
-            normalizedState.selectedContextId = nestedContext.contextId;
-          }
-
-          if (typeof nestedContext.contextName === "string") {
-            normalizedState.selectedContextName = nestedContext.contextName;
-          }
-
-          if (
-            nestedContext.contextType === "CITY" ||
-            nestedContext.contextType === "UNIVERSITY" ||
-            nestedContext.contextType === "MALL"
-          ) {
-            normalizedState.selectedContextType = nestedContext.contextType;
-          }
-        }
-      }
-
-      if (
-        rawObject.explorationMode === "authenticated" ||
-        rawObject.explorationMode === "guest"
-      ) {
-        normalizedState.explorationMode = rawObject.explorationMode;
-      }
-
-      if (typeof rawObject.hasCompletedOnboarding === "boolean") {
-        normalizedState.hasCompletedOnboarding =
-          rawObject.hasCompletedOnboarding;
-      }
-    }
-
-    return normalizedState;
   } catch {
     return INITIAL_ONBOARDING_STATE;
   }
@@ -169,75 +93,108 @@ if (typeof window !== "undefined") {
   currentState = readStoredState();
 }
 
+function persistState(next: StoredOnboardingState) {
+  if (typeof window === "undefined") return;
+
+  if (areOnboardingStatesEqual(next, INITIAL_ONBOARDING_STATE)) {
+    window.localStorage.removeItem(ONBOARDING_STORAGE_KEY);
+    return;
+  }
+
+  try {
+    window.localStorage.setItem(ONBOARDING_STORAGE_KEY, JSON.stringify(next));
+  } catch {
+    // ignore quota errors silently
+  }
+}
+
 function setStoredState(
   updater: (state: StoredOnboardingState) => StoredOnboardingState,
 ) {
-  currentState = updater(currentState);
+  const next = updater(currentState);
 
-  if (typeof window !== "undefined") {
-    if (
-      JSON.stringify(currentState) === JSON.stringify(INITIAL_ONBOARDING_STATE)
-    ) {
-      window.localStorage.removeItem(ONBOARDING_STORAGE_KEY);
-    } else {
-      window.localStorage.setItem(
-        ONBOARDING_STORAGE_KEY,
-        JSON.stringify(currentState),
-      );
-    }
-  }
+  if (areOnboardingStatesEqual(currentState, next)) return;
 
-  listeners.forEach((listener) => listener());
+  currentState = next;
+  persistState(currentState);
+  listeners.forEach((l) => l());
 }
 
+const subscribe = (listener: () => void) => {
+  listeners.add(listener);
+
+  return () => listeners.delete(listener);
+};
+
+const getSnapshot = () => currentState;
+
 export function OnboardingProvider({ children }: { children: ReactNode }) {
-  const value: Omit<OnboardingContextValue, "state"> = {
-    setSelectedCountry: (country) => {
-      setStoredState((current) => ({
-        ...current,
-        selectedCountry: country,
-        selectedCityId: null,
-        selectedCityName: null,
-        selectedContextId: null,
-        selectedContextName: null,
-        selectedContextType: null,
-      }));
-    },
-    setSelectedCity: (city) => {
-      setStoredState((current) => ({
-        ...current,
-        selectedCityId: city?.cityId ?? null,
-        selectedCityName: city?.cityName ?? null,
-        selectedContextId: null,
-        selectedContextName: null,
-        selectedContextType: null,
-      }));
-    },
-    setSelectedContext: (context) => {
-      setStoredState((current) => ({
-        ...current,
-        selectedContextId: context?.contextId ?? null,
-        selectedContextName: context?.contextName ?? null,
-        selectedContextType: context?.contextType ?? null,
-      }));
-    },
-    setExplorationMode: (mode) => {
-      setStoredState((current) => ({
-        ...current,
-        explorationMode: mode,
-      }));
-    },
-    completeOnboarding: (mode) => {
-      setStoredState((current) => ({
-        ...current,
-        explorationMode: mode,
-        hasCompletedOnboarding: true,
-      }));
-    },
-    clearOnboarding: () => {
-      setStoredState(() => INITIAL_ONBOARDING_STATE);
-    },
-  };
+  const setSelectedCountry = useCallback((country: string) => {
+    setStoredState((current) => ({
+      ...current,
+      selectedCountry: country,
+      selectedCityId: null,
+      selectedCityName: null,
+      selectedContextId: null,
+      selectedContextName: null,
+      selectedContextType: null,
+    }));
+  }, []);
+
+  const setSelectedCity = useCallback((city: CitySelection | null) => {
+    setStoredState((current) => ({
+      ...current,
+      selectedCityId: city?.cityId ?? null,
+      selectedCityName: city?.cityName ?? null,
+      selectedContextId: null,
+      selectedContextName: null,
+      selectedContextType: null,
+    }));
+  }, []);
+
+  const setSelectedContext = useCallback((context: ContextSelection | null) => {
+    setStoredState((current) => ({
+      ...current,
+      selectedContextId: context?.contextId ?? null,
+      selectedContextName: context?.contextName ?? null,
+      selectedContextType: context?.contextType ?? null,
+    }));
+  }, []);
+
+  const setExplorationMode = useCallback((mode: ExplorationMode) => {
+    setStoredState((current) => ({ ...current, explorationMode: mode }));
+  }, []);
+
+  const completeOnboarding = useCallback((mode: ExplorationMode) => {
+    setStoredState((current) => ({
+      ...current,
+      explorationMode: mode,
+      hasCompletedOnboarding: true,
+    }));
+  }, []);
+
+  const clearOnboarding = useCallback(() => {
+    setStoredState(() => INITIAL_ONBOARDING_STATE);
+  }, []);
+
+  const value = useMemo(
+    () => ({
+      setSelectedCountry,
+      setSelectedCity,
+      setSelectedContext,
+      setExplorationMode,
+      completeOnboarding,
+      clearOnboarding,
+    }),
+    [
+      setSelectedCity,
+      setSelectedContext,
+      setSelectedCountry,
+      setExplorationMode,
+      completeOnboarding,
+      clearOnboarding,
+    ],
+  );
 
   return (
     <OnboardingStoreContext.Provider value={value}>
@@ -246,7 +203,7 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
   );
 }
 
-export function useOnboarding() {
+export function useOnboarding(): OnboardingContextValue {
   const context = useContext(OnboardingStoreContext);
 
   if (!context) {
@@ -255,14 +212,8 @@ export function useOnboarding() {
 
   return {
     state: useSyncExternalStore(
-      (listener) => {
-        listeners.add(listener);
-
-        return () => {
-          listeners.delete(listener);
-        };
-      },
-      () => currentState,
+      subscribe,
+      getSnapshot,
       () => INITIAL_ONBOARDING_STATE,
     ),
     ...context,

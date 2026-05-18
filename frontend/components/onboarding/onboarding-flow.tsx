@@ -1,17 +1,17 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
   COUNTRIES,
   type OnboardingContext,
   type OnboardingStep,
-  hasActiveAuthSession,
 } from "@/lib/onboarding";
+import { useSession } from "@/providers/session-provider";
 import { CitySelector } from "./city-selector";
 import { CountrySelector } from "./country-selector";
 import { LandingHero } from "./landing-hero";
-import { LoginModal } from "./login-modal";
+import { AuthModal, type AuthMode } from "./auth-modal";
 import { OnboardingLayout } from "./onboarding-layout";
 import { ContextTypeGrid } from "./context-type-grid";
 import { useOnboarding } from "./onboarding-provider";
@@ -45,13 +45,15 @@ export function OnboardingFlow() {
     completeOnboarding,
     clearOnboarding,
   } = useOnboarding();
+  const session = useSession();
   const searchParams = useSearchParams();
   const [manualStep, setManualStep] = useState<OnboardingStep | null>(null);
   const [cities, setCities] = useState<CityRecord[]>([]);
   const [contexts, setContexts] = useState<OnboardingContext[]>([]);
   const [loadingContexts, setLoadingContexts] = useState(true);
   const [loadingCities, setLoadingCities] = useState(true);
-  const [loginModalOpen, setLoginModalOpen] = useState(false);
+  const [authModalOpen, setAuthModalOpen] = useState(false);
+  const [authModalMode, setAuthModalMode] = useState<AuthMode>("login");
   const step =
     manualStep ??
     getInitialStep(
@@ -159,26 +161,29 @@ export function OnboardingFlow() {
 
   const selectedContextId = state.selectedContextId;
 
-  const goToLocationStep = (mode: "authenticated" | "guest") => {
-    setExplorationMode(mode);
-    setSelectedCountry("Colombia");
-    setSelectedContext(null);
-    setManualStep("location");
-  };
+  const goToLocationStep = useCallback(
+    (mode: "authenticated" | "guest") => {
+      setExplorationMode(mode);
+      setSelectedCountry("Colombia");
+      setSelectedContext(null);
+      setManualStep("location");
+    },
+    [setExplorationMode, setSelectedContext, setSelectedCountry],
+  );
 
-  const handleStart = () => {
+  const handleStart = useCallback(() => {
     goToLocationStep("authenticated");
-  };
+  }, [goToLocationStep]);
 
-  const handleGuestExplore = () => {
+  const handleGuestExplore = useCallback(() => {
     goToLocationStep("guest");
-  };
+  }, [goToLocationStep]);
 
-  const handleLocationContinue = () => {
+  const handleLocationContinue = useCallback(() => {
     setManualStep("context");
-  };
+  }, []);
 
-  const handleContextContinue = () => {
+  const handleContextContinue = useCallback(() => {
     const nextMode = state.explorationMode ?? "authenticated";
 
     if (nextMode === "guest") {
@@ -190,7 +195,7 @@ export function OnboardingFlow() {
       return;
     }
 
-    if (hasActiveAuthSession()) {
+    if (session.status === "authenticated") {
       completeOnboarding("authenticated");
       if (typeof window !== "undefined") {
         window.sessionStorage.setItem("uspot:justCompletedOnboarding", "1");
@@ -199,23 +204,54 @@ export function OnboardingFlow() {
       return;
     }
 
-    setLoginModalOpen(true);
-  };
+    setAuthModalMode("login");
+    setAuthModalOpen(true);
+  }, [completeOnboarding, router, session.status, state.explorationMode]);
 
-  const handleContinueAsGuest = () => {
+  const handleContinueAsGuest = useCallback(() => {
     completeOnboarding("guest");
-    setLoginModalOpen(false);
+    setAuthModalOpen(false);
     if (typeof window !== "undefined") {
       window.sessionStorage.setItem("uspot:justCompletedOnboarding", "1");
     }
     router.push("/dashboard?mode=guest");
-  };
+  }, [completeOnboarding, router]);
+
+  const openLoginModal = useCallback(() => {
+    setAuthModalMode("login");
+    setAuthModalOpen(true);
+  }, []);
+
+  const handleCountryChange = useCallback(
+    (country: string) => {
+      setSelectedCountry(country);
+    },
+    [setSelectedCountry],
+  );
+
+  const handleCityChange = useCallback(
+    (city: CityRecord) => {
+      setSelectedCity({ cityId: city.id, cityName: city.name });
+    },
+    [setSelectedCity],
+  );
+
+  const handleContextSelect = useCallback(
+    (context: OnboardingContext) => {
+      setSelectedContext({
+        contextId: context.id,
+        contextName: context.name,
+        contextType: context.type,
+      });
+    },
+    [setSelectedContext],
+  );
 
   const action =
     step === "landing" ? (
       <button
         type="button"
-        onClick={() => setLoginModalOpen(true)}
+        onClick={openLoginModal}
         className="rounded-full bg-[#004ac6] px-4 py-2 text-sm font-semibold text-white shadow-[0_8px_24px_rgba(0,74,198,0.18)] transition hover:bg-[#2563eb]"
       >
         Iniciar sesión
@@ -223,30 +259,33 @@ export function OnboardingFlow() {
     ) : (
       <button
         type="button"
-        onClick={() => setLoginModalOpen(true)}
+        onClick={openLoginModal}
         className="rounded-full border border-[#c3c6d7] bg-white px-4 py-2 text-sm font-semibold text-[#191c1e] transition hover:bg-[#f6f8ff]"
       >
         Iniciar sesión
       </button>
     );
 
-  const footer =
-    step === "landing" ? (
-      <>
-        <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 sm:justify-start">
-          <a href="#" className="transition hover:text-[#004ac6]">
-            Privacidad
-          </a>
-          <a href="#" className="transition hover:text-[#004ac6]">
-            Términos
-          </a>
-          <a href="#" className="transition hover:text-[#004ac6]">
-            Soporte
-          </a>
-        </div>
-        <p>© 2026 USpot.</p>
-      </>
-    ) : null;
+  const footer = useMemo(
+    () =>
+      step === "landing" && !authModalOpen ? (
+        <>
+          <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 sm:justify-start">
+            <a href="#" className="transition hover:text-[#004ac6]">
+              Privacidad
+            </a>
+            <a href="#" className="transition hover:text-[#004ac6]">
+              Términos
+            </a>
+            <a href="#" className="transition hover:text-[#004ac6]">
+              Soporte
+            </a>
+          </div>
+          <p>© 2026 USpot.</p>
+        </>
+      ) : null,
+    [authModalOpen, step],
+  );
 
   return (
     <OnboardingLayout action={action} footer={footer}>
@@ -275,17 +314,13 @@ export function OnboardingFlow() {
             <div className="grid gap-4 lg:grid-cols-2">
               <CountrySelector
                 value={state.selectedCountry}
-                onChange={(country) => {
-                  setSelectedCountry(country);
-                }}
+                onChange={handleCountryChange}
               />
               <CitySelector
                 selectedCountry={state.selectedCountry}
                 selectedCityId={state.selectedCityId}
                 cities={cities}
-                onChange={(city) => {
-                  setSelectedCity({ cityId: city.id, cityName: city.name });
-                }}
+                onChange={handleCityChange}
               />
             </div>
 
@@ -338,13 +373,7 @@ export function OnboardingFlow() {
               <ContextTypeGrid
                 contexts={contexts}
                 selectedContextId={selectedContextId}
-                onSelect={(context) => {
-                  setSelectedContext({
-                    contextId: context.id,
-                    contextName: context.name,
-                    contextType: context.type,
-                  });
-                }}
+                onSelect={handleContextSelect}
               />
             )}
 
@@ -362,9 +391,11 @@ export function OnboardingFlow() {
         ) : null}
       </div>
 
-      <LoginModal
-        open={loginModalOpen}
-        onClose={handleContinueAsGuest}
+      <AuthModal
+        open={authModalOpen}
+        mode={authModalMode}
+        onModeChange={setAuthModalMode}
+        onClose={() => setAuthModalOpen(false)}
         onContinueAsGuest={handleContinueAsGuest}
       />
     </OnboardingLayout>
