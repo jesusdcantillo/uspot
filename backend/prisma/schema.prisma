@@ -19,6 +19,7 @@ enum Country {
 
 model User {
   id        Int      @id @default(autoincrement())
+  authId    String?  @unique
   email     String   @unique
   name      String
   lastName  String?
