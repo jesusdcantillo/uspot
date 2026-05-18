@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useCallback } from "react";
 import { createPortal } from "react-dom";
 import { getCities, type CityRecord } from "@/lib/cities";
 import { getContexts } from "@/lib/contexts";
@@ -160,15 +160,13 @@ export function DiscoverModal({
     contexts.find((context) => context.id === contextId) ?? null;
   const showLoadingState = loadingCities || loadingContexts;
 
-  const handleRetryContexts = () => {
+  const handleRetryContexts = useCallback(() => {
     setContextsError(null);
     setContextsRetryKey((current) => current + 1);
-  };
+  }, []);
 
-  const handleApply = () => {
-    if (!selectedCity || !selectedContext) {
-      return;
-    }
+  const handleApply = useCallback(() => {
+    if (!selectedCity || !selectedContext) return;
 
     onApplySelection({
       country,
@@ -178,7 +176,7 @@ export function DiscoverModal({
       contextName: selectedContext.name,
       contextType: selectedContext.type,
     });
-  };
+  }, [country, onApplySelection, selectedCity, selectedContext]);
 
   if (!open) {
     return null;

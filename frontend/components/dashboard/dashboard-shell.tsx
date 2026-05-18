@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useOnboarding } from "@/components/onboarding/onboarding-provider";
 import { getContexts } from "@/lib/contexts";
@@ -146,17 +146,17 @@ export function DashboardShell() {
       ? `${spots.length} spots en el espacio`
       : "Sin espacio seleccionado";
 
-  const handleDiscover = () => {
+  const handleDiscover = useCallback(() => {
     setDiscoverOpen(true);
-  };
+  }, []);
 
-  const handleResetSelection = () => {
+  const handleResetSelection = useCallback(() => {
     clearOnboarding();
     setDiscoverOpen(false);
     router.push("/");
-  };
+  }, [clearOnboarding, router]);
 
-  const handleResetFlow = () => {
+  const handleResetFlow = useCallback(() => {
     clearOnboarding();
     setDiscoverOpen(false);
 
@@ -165,52 +165,58 @@ export function DashboardShell() {
     }
 
     router.push("/?reset=1");
-  };
+  }, [clearOnboarding, router]);
 
-  const handleCloseDiscover = () => {
+  const handleCloseDiscover = useCallback(() => {
     setDiscoverOpen(false);
-  };
+  }, []);
 
-  const handleRetryContexts = () => {
+  const handleRetryContexts = useCallback(() => {
     setContextsError(null);
     setContextsRetryKey((current) => current + 1);
-  };
+  }, []);
 
-  const handleRetrySpots = () => {
+  const handleRetrySpots = useCallback(() => {
     setSpotsError(null);
     setSpotsRetryKey((current) => current + 1);
-  };
+  }, []);
 
-  const handleRetryDashboard = () => {
+  const handleRetryDashboard = useCallback(() => {
     setContextsError(null);
     setSpotsError(null);
     setContextsRetryKey((current) => current + 1);
     setSpotsRetryKey((current) => current + 1);
     setDashboardBoundaryKey((current) => current + 1);
     setMapBoundaryKey((current) => current + 1);
-  };
+  }, []);
 
-  const handleRetryMap = () => {
+  const handleRetryMap = useCallback(() => {
     setMapBoundaryKey((current) => current + 1);
-  };
+  }, []);
 
-  const handleApplyDiscoverSelection = (selection: {
-    country: string;
-    cityId: number;
-    cityName: string;
-    contextId: number;
-    contextName: string;
-    contextType: "CITY" | "UNIVERSITY" | "MALL";
-  }) => {
-    setSelectedCountry(selection.country);
-    setSelectedCity({ cityId: selection.cityId, cityName: selection.cityName });
-    setSelectedContext({
-      contextId: selection.contextId,
-      contextName: selection.contextName,
-      contextType: selection.contextType,
-    });
-    setDiscoverOpen(false);
-  };
+  const handleApplyDiscoverSelection = useCallback(
+    (selection: {
+      country: string;
+      cityId: number;
+      cityName: string;
+      contextId: number;
+      contextName: string;
+      contextType: "CITY" | "UNIVERSITY" | "MALL";
+    }) => {
+      setSelectedCountry(selection.country);
+      setSelectedCity({
+        cityId: selection.cityId,
+        cityName: selection.cityName,
+      });
+      setSelectedContext({
+        contextId: selection.contextId,
+        contextName: selection.contextName,
+        contextType: selection.contextType,
+      });
+      setDiscoverOpen(false);
+    },
+    [setSelectedCity, setSelectedContext, setSelectedCountry],
+  );
 
   if (
     !state.hasCompletedOnboarding ||
