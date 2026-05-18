@@ -6,6 +6,7 @@ import "leaflet/dist/leaflet.css";
 import { MapContainer, Marker, Popup, TileLayer, useMap } from "react-leaflet";
 import type { Spot } from "@/lib/spots";
 import type { OnboardingContext } from "@/lib/onboarding";
+import { MapLoadingState } from "../loading/map-loading-state";
 
 type DashboardMapProps = {
   context: OnboardingContext;
@@ -67,6 +68,12 @@ export function DashboardMap({ context, spots, loading }: DashboardMapProps) {
 
   return (
     <div className="relative h-full w-full overflow-hidden">
+      {loading ? (
+        <div className="absolute inset-0 z-10">
+          <MapLoadingState className="h-full min-h-full rounded-none border-0 bg-transparent p-0 shadow-none" />
+        </div>
+      ) : null}
+
       <MapContainer
         center={center}
         zoom={zoom}
@@ -97,23 +104,6 @@ export function DashboardMap({ context, spots, loading }: DashboardMapProps) {
             </Popup>
           </Marker>
         ))}
-
-        <div className="pointer-events-none absolute left-4 top-4 z-[500] rounded-full border border-white/70 bg-white/80 px-4 py-3 shadow-[0_14px_36px_rgba(37,99,235,0.1)] backdrop-blur-xl">
-          <div className="flex items-center gap-2 text-sm font-semibold text-[#191c1e]">
-            <span className="text-[0.64rem] font-semibold uppercase tracking-[0.24em] text-[#6a7080]">
-              Contexto centrado
-            </span>
-            <span className="text-[#004ac6]">{context.name}</span>
-            <span className="rounded-full bg-[#eef2ff] px-2 py-0.5 text-xs font-semibold text-[#004ac6]">
-              {spots.length} spots visibles
-            </span>
-            {loading ? (
-              <span className="rounded-full border border-[#d7deea] bg-white px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-[#6a7080]">
-                Ajustando
-              </span>
-            ) : null}
-          </div>
-        </div>
       </MapContainer>
     </div>
   );
