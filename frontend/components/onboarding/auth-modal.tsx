@@ -79,6 +79,7 @@ export function AuthModal({
   const descriptionId = useId();
   const [isMounted, setIsMounted] = useState(open);
   const [isVisible, setIsVisible] = useState(open);
+  const [currentMode, setCurrentMode] = useState<AuthMode>(mode);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [username, setUsername] = useState("");
@@ -111,6 +112,7 @@ export function AuthModal({
       const frame = window.requestAnimationFrame(() => {
         setIsMounted(true);
         setIsVisible(true);
+        setCurrentMode(mode);
       });
 
       return () => window.cancelAnimationFrame(frame);
@@ -129,7 +131,7 @@ export function AuthModal({
         window.clearTimeout(timeoutId);
       }
     };
-  }, [open]);
+  }, [mode, open]);
 
   useEffect(() => {
     if (!isMounted) {
@@ -157,7 +159,7 @@ export function AuthModal({
     return null;
   }
 
-  const isLogin = mode === "login";
+  const isLogin = currentMode === "login";
   const title = isLogin ? "Inicia sesión" : "Crea tu cuenta";
   const subtitle = isLogin
     ? "Inicia sesión para guardar favoritos y participar en la comunidad."
@@ -380,7 +382,11 @@ export function AuthModal({
             {footerCopy}{" "}
             <button
               type="button"
-              onClick={() => onModeChange(isLogin ? "register" : "login")}
+              onClick={() => {
+                const nextMode = isLogin ? "register" : "login";
+                setCurrentMode(nextMode);
+                onModeChange(nextMode);
+              }}
               className="font-semibold text-[#004ac6] transition hover:text-[#2563eb]"
             >
               {footerAction}
