@@ -41,13 +41,15 @@ export function OnboardingFlow() {
     setSelectedCountry,
     setSelectedCity,
     setSelectedContext,
-    setExplorationMode,
     completeOnboarding,
     clearOnboarding,
   } = useOnboarding();
   const session = useSession();
   const searchParams = useSearchParams();
   const [manualStep, setManualStep] = useState<OnboardingStep | null>(null);
+  const [pendingMode, setPendingMode] = useState<
+    "authenticated" | "guest" | null
+  >(null);
   const [cities, setCities] = useState<CityRecord[]>([]);
   const [contexts, setContexts] = useState<OnboardingContext[]>([]);
   const [loadingContexts, setLoadingContexts] = useState(true);
@@ -130,7 +132,7 @@ export function OnboardingFlow() {
   }, [clearOnboarding, router, searchParams]);
 
   useEffect(() => {
-    if (!state.hasCompletedOnboarding) {
+    if (session.status === "loading") {
       return;
     }
 
@@ -146,11 +148,38 @@ export function OnboardingFlow() {
       // consume the flag and redirect once
       window.sessionStorage.removeItem("uspot:justCompletedOnboarding");
 
-      router.replace(
-        `/dashboard?mode=${state.explorationMode ?? "authenticated"}`,
-      );
+      router.replace("/dashboard");
     }
-  }, [router, state.explorationMode, state.hasCompletedOnboarding]);
+  }, [router, session.status, state.hasCompletedOnboarding]);
+
+  useEffect(() => {
+    if (pendingMode !== "authenticated") {
+      return;
+    }
+
+    if (session.status !== "authenticated") {
+      return;
+    }
+
+    if (step !== "context" || state.hasCompletedOnboarding) {
+      return;
+    }
+
+    completeOnboarding("authenticated");
+
+    if (typeof window !== "undefined") {
+      window.sessionStorage.setItem("uspot:justCompletedOnboarding", "1");
+    }
+
+    router.push("/dashboard");
+  }, [
+    completeOnboarding,
+    pendingMode,
+    router,
+    session.status,
+    step,
+    state.hasCompletedOnboarding,
+  ]);
 
   const selectedCountry = useMemo(() => {
     return (
@@ -163,12 +192,12 @@ export function OnboardingFlow() {
 
   const goToLocationStep = useCallback(
     (mode: "authenticated" | "guest") => {
-      setExplorationMode(mode);
+      setPendingMode(mode);
       setSelectedCountry("Colombia");
       setSelectedContext(null);
       setManualStep("location");
     },
-    [setExplorationMode, setSelectedContext, setSelectedCountry],
+    [setSelectedContext, setSelectedCountry],
   );
 
   const handleStart = useCallback(() => {
@@ -184,14 +213,12 @@ export function OnboardingFlow() {
   }, []);
 
   const handleContextContinue = useCallback(() => {
-    const nextMode = state.explorationMode ?? "authenticated";
-
-    if (nextMode === "guest") {
+    if (pendingMode === "guest") {
       completeOnboarding("guest");
       if (typeof window !== "undefined") {
         window.sessionStorage.setItem("uspot:justCompletedOnboarding", "1");
       }
-      router.push("/dashboard?mode=guest");
+      router.push("/dashboard");
       return;
     }
 
@@ -200,24 +227,26 @@ export function OnboardingFlow() {
       if (typeof window !== "undefined") {
         window.sessionStorage.setItem("uspot:justCompletedOnboarding", "1");
       }
-      router.push("/dashboard?mode=authenticated");
+      router.push("/dashboard");
       return;
     }
 
     setAuthModalMode("login");
     setAuthModalOpen(true);
-  }, [completeOnboarding, router, session.status, state.explorationMode]);
+  }, [completeOnboarding, pendingMode, router, session.status]);
 
   const handleContinueAsGuest = useCallback(() => {
+    setPendingMode("guest");
     completeOnboarding("guest");
     setAuthModalOpen(false);
     if (typeof window !== "undefined") {
       window.sessionStorage.setItem("uspot:justCompletedOnboarding", "1");
     }
-    router.push("/dashboard?mode=guest");
+    router.push("/dashboard");
   }, [completeOnboarding, router]);
 
   const openLoginModal = useCallback(() => {
+    setPendingMode("authenticated");
     setAuthModalMode("login");
     setAuthModalOpen(true);
   }, []);

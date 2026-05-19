@@ -2,6 +2,7 @@
 
 import { useEffect, useId, useState, useCallback } from "react";
 import { supabase } from "../../lib/supabase";
+import { ModalPortal } from "@/components/shared/modal-portal";
 
 export type AuthMode = "login" | "register";
 
@@ -166,223 +167,227 @@ export function AuthModal({
   const footerAction = isLogin ? "Crear cuenta" : "Inicia sesión";
 
   return (
-    <div
-      className={`fixed inset-0 z-[100] flex items-center justify-center bg-[#191c1e]/35 p-4 backdrop-blur-md transition-opacity duration-200 ${
-        isVisible ? "opacity-100" : "opacity-0"
-      }`}
-      role="presentation"
-      onClick={onClose}
-    >
+    <ModalPortal>
       <div
-        className={`relative w-full max-w-[30rem] overflow-hidden rounded-[1.75rem] border border-white/40 bg-white/75 px-6 py-7 text-[#191c1e] shadow-[0_32px_72px_rgba(0,0,0,0.24)] backdrop-blur-[22px] transition-all duration-200 sm:px-8 sm:py-8 ${
-          isVisible
-            ? "translate-y-0 scale-100 opacity-100"
-            : "translate-y-3 scale-[0.98] opacity-0"
+        className={`fixed inset-0 z-[90] flex items-center justify-center bg-[#191c1e]/35 p-4 backdrop-blur-md transition-opacity duration-200 ${
+          isVisible ? "opacity-100" : "opacity-0"
         }`}
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby={titleId}
-        aria-describedby={descriptionId}
-        onClick={(event) => event.stopPropagation()}
+        role="presentation"
+        onClick={onClose}
       >
-        <button
-          type="button"
-          onClick={onClose}
-          className="absolute right-4 top-4 inline-flex h-9 w-9 items-center justify-center rounded-full bg-white/70 text-[#6a7080] transition hover:bg-white hover:text-[#191c1e]"
-          aria-label="Cerrar modal"
+        <div
+          className={`relative z-[100] w-full max-w-[30rem] overflow-hidden rounded-[1.75rem] border border-white/40 bg-white/75 px-6 py-7 text-[#191c1e] shadow-[0_32px_72px_rgba(0,0,0,0.24)] backdrop-blur-[22px] transition-all duration-200 sm:px-8 sm:py-8 ${
+            isVisible
+              ? "translate-y-0 scale-100 opacity-100"
+              : "translate-y-3 scale-[0.98] opacity-0"
+          }`}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby={titleId}
+          aria-describedby={descriptionId}
+          onClick={(event) => event.stopPropagation()}
         >
-          ×
-        </button>
-
-        <div className="flex flex-col items-center text-center">
-          <span className="text-[1.2rem] font-extrabold tracking-tighter text-[#004ac6]">
-            USpot
-          </span>
-          <h2
-            id={titleId}
-            className="mt-4 text-[1.9rem] font-bold tracking-tight text-[#191c1e]"
+          <button
+            type="button"
+            onClick={onClose}
+            className="absolute right-4 top-4 inline-flex h-9 w-9 items-center justify-center rounded-full bg-white/70 text-[#6a7080] transition hover:bg-white hover:text-[#191c1e]"
+            aria-label="Cerrar modal"
           >
-            {title}
-          </h2>
-          <p
-            id={descriptionId}
-            className="mt-2 max-w-[22rem] text-sm leading-6 text-[#6a7080]"
-          >
-            {subtitle}
-          </p>
-        </div>
+            ×
+          </button>
 
-        <form
-          className="mt-7 space-y-4"
-          onSubmit={async (event) => {
-            event.preventDefault();
-            setError(null);
-            if (!supabase) {
-              setError("El servicio de autenticación no está disponible.");
-              return;
-            }
+          <div className="flex flex-col items-center text-center">
+            <span className="text-[1.2rem] font-extrabold tracking-tighter text-[#004ac6]">
+              USpot
+            </span>
+            <h2
+              id={titleId}
+              className="mt-4 text-[1.9rem] font-bold tracking-tight text-[#191c1e]"
+            >
+              {title}
+            </h2>
+            <p
+              id={descriptionId}
+              className="mt-2 max-w-[22rem] text-sm leading-6 text-[#6a7080]"
+            >
+              {subtitle}
+            </p>
+          </div>
 
-            setLoading(true);
-            try {
-              if (isLogin) {
-                const { error: signInError } =
-                  await supabase.auth.signInWithPassword({
+          <form
+            className="mt-7 space-y-4"
+            onSubmit={async (event) => {
+              event.preventDefault();
+              setError(null);
+              if (!supabase) {
+                setError("El servicio de autenticación no está disponible.");
+                return;
+              }
+
+              setLoading(true);
+              try {
+                if (isLogin) {
+                  const { error: signInError } =
+                    await supabase.auth.signInWithPassword({
+                      email,
+                      password,
+                    });
+
+                  if (signInError) {
+                    setError(signInError.message);
+                  } else {
+                    onClose();
+                  }
+                } else {
+                  const { error: signUpError } = await supabase.auth.signUp({
                     email,
                     password,
+                    options: { data: { username } },
                   });
 
-                if (signInError) {
-                  setError(signInError.message);
-                } else {
-                  onClose();
+                  if (signUpError) {
+                    setError(signUpError.message);
+                  } else {
+                    onClose();
+                  }
                 }
-              } else {
-                const { error: signUpError } = await supabase.auth.signUp({
-                  email,
-                  password,
-                  options: { data: { username } },
-                });
-
-                if (signUpError) {
-                  setError(signUpError.message);
-                } else {
-                  onClose();
-                }
+              } finally {
+                setLoading(false);
               }
-            } finally {
-              setLoading(false);
-            }
-          }}
-        >
-          {isLogin ? (
-            <>
-              <Field
-                label="Email"
-                type="email"
-                placeholder="email@dominio.com"
-                icon="✉"
-                inputProps={{
-                  value: email,
-                  onChange: (e) => setEmail(e.target.value),
-                  required: true,
-                  autoComplete: "email",
-                }}
-              />
-              <label className="block space-y-1">
-                <div className="ml-1 flex items-center justify-between gap-3 text-sm font-medium text-[#6a7080]">
-                  <span>Contraseña</span>
-                  <button
-                    type="button"
-                    className="text-xs font-semibold text-[#004ac6] transition hover:text-[#2563eb]"
-                  >
-                    ¿Olvidaste tu contraseña?
-                  </button>
-                </div>
-                <div className="relative">
-                  <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[18px] text-[#8a90a0]">
-                    🔒
-                  </span>
-                  <input
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    type="password"
-                    placeholder="••••••••"
-                    required
-                    className="h-12 w-full rounded-xl border border-[#d7deea] bg-white/80 pl-10 pr-3 text-[15px] text-[#191c1e] outline-none transition placeholder:text-[#a0a8b8] focus:border-[#004ac6] focus:ring-2 focus:ring-[#004ac6]/15"
-                  />
-                </div>
-              </label>
-            </>
-          ) : (
-            <>
-              <Field
-                label="Nombre de usuario"
-                type="text"
-                placeholder="p. ej. user123"
-                icon="👤"
-                inputProps={{
-                  value: username,
-                  onChange: (e) => setUsername(e.target.value),
-                  required: true,
-                }}
-              />
-              <Field
-                label="Correo electrónico"
-                type="email"
-                placeholder="email@dominio.com"
-                icon="✉"
-                inputProps={{
-                  value: email,
-                  onChange: (e) => setEmail(e.target.value),
-                  required: true,
-                  autoComplete: "email",
-                }}
-              />
-              <Field
-                label="Contraseña"
-                type="password"
-                placeholder="••••••••"
-                icon="🔒"
-                inputProps={{
-                  value: password,
-                  onChange: (e) => setPassword(e.target.value),
-                  required: true,
-                }}
-              />
-            </>
-          )}
+            }}
+          >
+            {isLogin ? (
+              <>
+                <Field
+                  label="Email"
+                  type="email"
+                  placeholder="email@dominio.com"
+                  icon="✉"
+                  inputProps={{
+                    value: email,
+                    onChange: (e) => setEmail(e.target.value),
+                    required: true,
+                    autoComplete: "email",
+                  }}
+                />
+                <label className="block space-y-1">
+                  <div className="ml-1 flex items-center justify-between gap-3 text-sm font-medium text-[#6a7080]">
+                    <span>Contraseña</span>
+                    <button
+                      type="button"
+                      className="text-xs font-semibold text-[#004ac6] transition hover:text-[#2563eb]"
+                    >
+                      ¿Olvidaste tu contraseña?
+                    </button>
+                  </div>
+                  <div className="relative">
+                    <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[18px] text-[#8a90a0]">
+                      🔒
+                    </span>
+                    <input
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      type="password"
+                      placeholder="••••••••"
+                      required
+                      className="h-12 w-full rounded-xl border border-[#d7deea] bg-white/80 pl-10 pr-3 text-[15px] text-[#191c1e] outline-none transition placeholder:text-[#a0a8b8] focus:border-[#004ac6] focus:ring-2 focus:ring-[#004ac6]/15"
+                    />
+                  </div>
+                </label>
+              </>
+            ) : (
+              <>
+                <Field
+                  label="Nombre de usuario"
+                  type="text"
+                  placeholder="p. ej. user123"
+                  icon="👤"
+                  inputProps={{
+                    value: username,
+                    onChange: (e) => setUsername(e.target.value),
+                    required: true,
+                  }}
+                />
+                <Field
+                  label="Correo electrónico"
+                  type="email"
+                  placeholder="email@dominio.com"
+                  icon="✉"
+                  inputProps={{
+                    value: email,
+                    onChange: (e) => setEmail(e.target.value),
+                    required: true,
+                    autoComplete: "email",
+                  }}
+                />
+                <Field
+                  label="Contraseña"
+                  type="password"
+                  placeholder="••••••••"
+                  icon="🔒"
+                  inputProps={{
+                    value: password,
+                    onChange: (e) => setPassword(e.target.value),
+                    required: true,
+                  }}
+                />
+              </>
+            )}
+
+            <button
+              type="submit"
+              disabled={loading}
+              className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-[#004ac6] px-4 text-sm font-semibold text-white shadow-[0_14px_30px_rgba(0,74,198,0.18)] transition hover:bg-[#2563eb] active:scale-[0.99] disabled:opacity-60"
+            >
+              {loading ? "Procesando..." : primaryLabel}
+              {!isLogin ? <span aria-hidden="true">→</span> : null}
+            </button>
+
+            {error ? (
+              <p className="mt-2 text-sm text-red-600">{error}</p>
+            ) : null}
+          </form>
+
+          <div className="my-6 flex items-center gap-3">
+            <div className="h-px flex-1 bg-[#d7deea]" />
+            <span className="text-[0.68rem] font-semibold uppercase tracking-[0.24em] text-[#8a90a0]">
+              o continúa con
+            </span>
+            <div className="h-px flex-1 bg-[#d7deea]" />
+          </div>
 
           <button
-            type="submit"
+            type="button"
+            onClick={handleGoogle}
             disabled={loading}
-            className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-[#004ac6] px-4 text-sm font-semibold text-white shadow-[0_14px_30px_rgba(0,74,198,0.18)] transition hover:bg-[#2563eb] active:scale-[0.99] disabled:opacity-60"
+            className="inline-flex h-12 w-full items-center justify-center gap-3 rounded-xl border border-[#d7deea] bg-white px-4 text-sm font-semibold text-[#191c1e] shadow-[0_8px_20px_rgba(25,28,30,0.04)] transition hover:bg-[#f2f4f6] disabled:opacity-60"
           >
-            {loading ? "Procesando..." : primaryLabel}
-            {!isLogin ? <span aria-hidden="true">→</span> : null}
+            <GoogleMark />
+            {loading ? "Iniciando..." : "Continuar con Google"}
           </button>
 
-          {error ? <p className="mt-2 text-sm text-red-600">{error}</p> : null}
-        </form>
+          {onContinueAsGuest ? (
+            <button
+              type="button"
+              onClick={onContinueAsGuest}
+              className="mt-4 w-full text-center text-sm font-medium text-[#6a7080] transition hover:text-[#004ac6]"
+            >
+              Seguir como invitado
+            </button>
+          ) : null}
 
-        <div className="my-6 flex items-center gap-3">
-          <div className="h-px flex-1 bg-[#d7deea]" />
-          <span className="text-[0.68rem] font-semibold uppercase tracking-[0.24em] text-[#8a90a0]">
-            o continúa con
-          </span>
-          <div className="h-px flex-1 bg-[#d7deea]" />
+          <p className="mt-5 text-center text-sm text-[#6a7080]">
+            {footerCopy}{" "}
+            <button
+              type="button"
+              onClick={() => onModeChange(isLogin ? "register" : "login")}
+              className="font-semibold text-[#004ac6] transition hover:text-[#2563eb]"
+            >
+              {footerAction}
+            </button>
+          </p>
         </div>
-
-        <button
-          type="button"
-          onClick={handleGoogle}
-          disabled={loading}
-          className="inline-flex h-12 w-full items-center justify-center gap-3 rounded-xl border border-[#d7deea] bg-white px-4 text-sm font-semibold text-[#191c1e] shadow-[0_8px_20px_rgba(25,28,30,0.04)] transition hover:bg-[#f2f4f6] disabled:opacity-60"
-        >
-          <GoogleMark />
-          {loading ? "Iniciando..." : "Continuar con Google"}
-        </button>
-
-        {onContinueAsGuest ? (
-          <button
-            type="button"
-            onClick={onContinueAsGuest}
-            className="mt-4 w-full text-center text-sm font-medium text-[#6a7080] transition hover:text-[#004ac6]"
-          >
-            Seguir como invitado
-          </button>
-        ) : null}
-
-        <p className="mt-5 text-center text-sm text-[#6a7080]">
-          {footerCopy}{" "}
-          <button
-            type="button"
-            onClick={() => onModeChange(isLogin ? "register" : "login")}
-            className="font-semibold text-[#004ac6] transition hover:text-[#2563eb]"
-          >
-            {footerAction}
-          </button>
-        </p>
       </div>
-    </div>
+    </ModalPortal>
   );
 }
