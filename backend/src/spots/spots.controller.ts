@@ -1,13 +1,17 @@
 import {
   Body,
+  BadRequestException,
   Controller,
   Get,
-  BadRequestException,
   Query,
   Param,
   ParseIntPipe,
   Post,
+  UseGuards,
 } from '@nestjs/common';
+import { CurrentUser } from '../auth/current-user.decorator';
+import { SupabaseAuthGuard } from '../auth/supabase-auth.guard';
+import { type AuthenticatedUser } from '../auth/types';
 import { CreateSpotDto } from './dto/create-spot.dto';
 import { SpotResponseDto } from './dto/spot-response.dto';
 import { SpotsService } from './spots.service';
@@ -17,8 +21,12 @@ export class SpotsController {
   constructor(private readonly spotsService: SpotsService) {}
 
   @Post()
-  create(@Body() createSpotDto: CreateSpotDto): Promise<SpotResponseDto> {
-    return this.spotsService.create(createSpotDto);
+  @UseGuards(SupabaseAuthGuard)
+  create(
+    @Body() createSpotDto: CreateSpotDto,
+    @CurrentUser() user: AuthenticatedUser,
+  ): Promise<SpotResponseDto> {
+    return this.spotsService.create(user.id, createSpotDto);
   }
 
   @Get()

@@ -13,9 +13,12 @@ type SpotWithRelations = Spot & {
 export class SpotsService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async create(createSpotDto: CreateSpotDto): Promise<SpotResponseDto> {
+  async create(
+    userId: number,
+    createSpotDto: CreateSpotDto,
+  ): Promise<SpotResponseDto> {
     const user = await this.prisma.user.findUnique({
-      where: { id: createSpotDto.userId },
+      where: { id: userId },
       select: { id: true },
     });
 
@@ -43,7 +46,7 @@ export class SpotsService {
 
     const spot = await this.prisma.spot.create({
       data: {
-        userId: createSpotDto.userId,
+        userId,
         categoryId: createSpotDto.categoryId,
         contextId: createSpotDto.contextId,
         title: createSpotDto.title,
