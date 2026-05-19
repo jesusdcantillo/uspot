@@ -6,7 +6,7 @@ type DashboardMobileNavProps = {
 
 export function DashboardMobileNav({ onDiscover }: DashboardMobileNavProps) {
   return (
-    <div className="fixed inset-x-0 bottom-0 z-[1300] border-t border-white/30 bg-white/92 px-4 pb-[calc(env(safe-area-inset-bottom)+0.5rem)] pt-2 shadow-[0_-10px_30px_rgba(37,99,235,0.08)] backdrop-blur-xl lg:hidden">
+    <div className="fixed inset-x-0 bottom-0 z-20 border-t border-white/30 bg-white/92 px-4 pb-[calc(env(safe-area-inset-bottom)+0.5rem)] pt-2 shadow-[0_-10px_30px_rgba(37,99,235,0.08)] backdrop-blur-xl lg:hidden">
       <div className="mx-auto grid max-w-4xl grid-cols-3 gap-2">
         <button
           type="button"
