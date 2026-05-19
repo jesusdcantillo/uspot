@@ -92,13 +92,3 @@ export const INITIAL_ONBOARDING_STATE: StoredOnboardingState = {
 export function getCountryByName(name: string): CountryOption | undefined {
   return COUNTRIES.find((country) => country.name === name);
 }
-
-export function hasActiveAuthSession(): boolean {
-  if (typeof window === "undefined") {
-    return false;
-  }
-
-  return Object.keys(window.localStorage).some((key) => {
-    return key.includes("auth-token") || key.startsWith("sb-");
-  });
-}
