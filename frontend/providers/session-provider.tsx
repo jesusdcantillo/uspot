@@ -11,6 +11,7 @@ import {
 } from "react";
 import type { Session } from "@supabase/supabase-js";
 import { supabase } from "@/lib/supabase";
+import { setAuthAccessToken } from "@/lib/session-token";
 
 export type SessionStatus = "loading" | "guest" | "authenticated";
 
@@ -30,6 +31,8 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   const [accessToken, setAccessToken] = useState<string | null>(null);
 
   const applySession = useCallback((nextSession: Session | null) => {
+    setAuthAccessToken(nextSession?.access_token ?? null);
+
     setSession((currentSession) => {
       if (currentSession?.access_token === nextSession?.access_token) {
         return currentSession;
