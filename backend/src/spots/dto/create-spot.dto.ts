@@ -10,10 +10,6 @@ import {
 export class CreateSpotDto {
   @Type(() => Number)
   @IsInt()
-  userId!: number;
-
-  @Type(() => Number)
-  @IsInt()
   categoryId!: number;
 
   @Type(() => Number)
