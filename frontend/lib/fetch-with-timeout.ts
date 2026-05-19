@@ -1,5 +1,7 @@
 export type FetchFailureKind = "timeout" | "network" | "server";
 
+import { getAuthAccessToken } from "./session-token";
+
 export class UspotFetchError extends Error {
   kind: FetchFailureKind;
   status?: number;
@@ -28,6 +30,12 @@ export async function fetchWithTimeout(
   const { timeoutMs = 15000, signal, ...requestInit } = options;
   const controller = new AbortController();
   let timedOut = false;
+  const headers = new Headers(requestInit.headers);
+  const accessToken = getAuthAccessToken();
+
+  if (accessToken && !headers.has("Authorization")) {
+    headers.set("Authorization", `Bearer ${accessToken}`);
+  }
 
   const timeoutHandle = globalThis.setTimeout(() => {
     timedOut = true;
@@ -49,6 +57,7 @@ export async function fetchWithTimeout(
   try {
     return await fetch(input, {
       ...requestInit,
+      headers,
       signal: controller.signal,
     });
   } catch (error) {
