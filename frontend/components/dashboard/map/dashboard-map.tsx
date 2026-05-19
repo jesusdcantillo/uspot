@@ -81,6 +81,7 @@ export function DashboardMap({ context, spots, loading }: DashboardMapProps) {
         zoomControl
         className="h-full w-full"
       >
+        <MapSelectionListener />
         <MapCenterSync context={context} />
 
         <TileLayer
@@ -107,4 +108,36 @@ export function DashboardMap({ context, spots, loading }: DashboardMapProps) {
       </MapContainer>
     </div>
   );
+}
+
+function MapSelectionListener() {
+  const map = useMap();
+
+  useEffect(() => {
+    function handleMessage(event: MessageEvent) {
+      const data = event.data as Record<string, unknown> | null;
+      if (!data || data.type !== "uspot:map:enable-selection") return;
+
+      // once: wait for next click and post back to parent
+      const handler = (e: L.LeafletMouseEvent) => {
+        try {
+          const lat = e.latlng.lat as number;
+          const lng = e.latlng.lng as number;
+          window.parent.postMessage(
+            { type: "uspot:map:selected", latitude: lat, longitude: lng },
+            "*",
+          );
+        } finally {
+          map.off("click", handler);
+        }
+      };
+
+      map.once("click", handler);
+    }
+
+    window.addEventListener("message", handleMessage);
+    return () => window.removeEventListener("message", handleMessage);
+  }, [map]);
+
+  return null;
 }

@@ -37,12 +37,12 @@ export function DashboardMapLoader({
   retryKey,
 }: DashboardMapLoaderProps) {
   return (
-    <div className="relative h-full w-full overflow-hidden rounded-[2rem] border border-white/70 bg-white/70 shadow-[0_16px_40px_rgba(37,99,235,0.12)]">
+    <div className="relative z-30 h-full w-full overflow-hidden rounded-[2rem] border border-white/70 bg-white/70 shadow-[0_16px_40px_rgba(37,99,235,0.12)]">
       <iframe
         key={`${retryKey}-${context.id}`}
         title={`Mapa de ${context.name}`}
         src={buildMapPanelUrl(context, retryKey, spots.length)}
-        className="h-full w-full border-0"
+        className="relative z-30 h-full w-full border-0"
         loading="eager"
         aria-busy={loading}
       />
