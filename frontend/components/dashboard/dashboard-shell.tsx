@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useSession } from "@/providers/session-provider";
 import { useRouter } from "next/navigation";
 import { useOnboarding } from "@/components/onboarding/onboarding-provider";
 import { getContexts } from "@/lib/contexts";
@@ -8,6 +9,8 @@ import { getSpots, type Spot } from "@/lib/spots";
 import type { OnboardingContext } from "@/lib/onboarding";
 import { DashboardHeader } from "./header/dashboard-header";
 import { DashboardSidebar } from "./sidebar/dashboard-sidebar";
+import { AuthModal } from "@/components/onboarding/auth-modal";
+import { CreateSpotModal } from "@/components/dashboard/create-spot-modal";
 import { DashboardSpotsBar } from "./spots/dashboard-spots-bar";
 import { DashboardEmptyState } from "./spots/dashboard-empty-state";
 import { DiscoverModal } from "./discover/discover-modal";
@@ -32,6 +35,7 @@ function isContextReady(context: OnboardingContext | null) {
 }
 
 export function DashboardShell() {
+  const session = useSession();
   const router = useRouter();
   const {
     state,
@@ -51,6 +55,8 @@ export function DashboardShell() {
   const [contextsRetryKey, setContextsRetryKey] = useState(0);
   const [spotsRetryKey, setSpotsRetryKey] = useState(0);
   const [discoverOpen, setDiscoverOpen] = useState(false);
+  const [createSpotOpen, setCreateSpotOpen] = useState(false);
+  const [joinCommunityOpen, setJoinCommunityOpen] = useState(false);
 
   useEffect(() => {
     // consume session flag so onboarding auto-redirect only happens once
@@ -149,6 +155,16 @@ export function DashboardShell() {
   const handleDiscover = useCallback(() => {
     setDiscoverOpen(true);
   }, []);
+
+  const handleCreateSpot = useCallback(() => {
+    // open join community modal for guests, otherwise open create spot
+    if (session.status === "guest") {
+      setJoinCommunityOpen(true);
+      return;
+    }
+
+    setCreateSpotOpen(true);
+  }, [session.status]);
 
   const handleResetSelection = useCallback(() => {
     clearOnboarding();
@@ -261,7 +277,10 @@ export function DashboardShell() {
       onRetry={handleRetryDashboard}
     >
       <div className="relative min-h-screen overflow-hidden bg-[#f7f9fb] text-[#191c1e]">
-        <DashboardSidebar onDiscover={handleDiscover} />
+        <DashboardSidebar
+          onDiscover={handleDiscover}
+          onCreateSpot={handleCreateSpot}
+        />
 
         <div className="flex min-h-screen flex-col lg:pl-[18.5rem]">
           <DashboardHeader
@@ -343,7 +362,7 @@ export function DashboardShell() {
             )}
 
             {spots.length > 0 && selectedContext && !spotsError ? (
-              <section className="fixed bottom-24 left-3 right-3 z-[1200] pointer-events-auto lg:bottom-3 lg:left-[19.5rem] lg:right-6">
+              <section className="fixed bottom-24 left-3 right-3 z-30 pointer-events-auto lg:bottom-3 lg:left-[19.5rem] lg:right-6">
                 <DashboardSpotsBar spots={spots} />
               </section>
             ) : null}
@@ -361,6 +380,25 @@ export function DashboardShell() {
             onClose={handleCloseDiscover}
             onRestartSelection={handleResetSelection}
             onApplySelection={handleApplyDiscoverSelection}
+          />
+        ) : null}
+
+        {joinCommunityOpen ? (
+          <AuthModal
+            open={joinCommunityOpen}
+            mode="login"
+            onModeChange={() => undefined}
+            onClose={() => setJoinCommunityOpen(false)}
+            onContinueAsGuest={() => {
+              setJoinCommunityOpen(false);
+            }}
+          />
+        ) : null}
+
+        {createSpotOpen ? (
+          <CreateSpotModal
+            open={createSpotOpen}
+            onClose={() => setCreateSpotOpen(false)}
           />
         ) : null}
       </div>
