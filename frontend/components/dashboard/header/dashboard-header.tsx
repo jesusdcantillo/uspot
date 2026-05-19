@@ -18,7 +18,7 @@ export function DashboardHeader({
   onResetFlow,
 }: DashboardHeaderProps) {
   return (
-    <header className="fixed left-4 right-4 top-4 z-40 lg:left-[19.5rem]">
+    <header className="fixed left-4 right-4 top-4 z-20 lg:left-[19.5rem]">
       <div className="flex items-center justify-between rounded-full border border-white/30 bg-white/80 px-5 py-3 shadow-[0_10px_30px_rgba(37,99,235,0.1)] backdrop-blur-xl">
         <div className="min-w-0">
           <p className="text-[0.68rem] font-semibold uppercase tracking-[0.22em] text-[#6a7080]">
