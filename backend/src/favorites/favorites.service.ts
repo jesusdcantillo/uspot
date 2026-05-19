@@ -26,10 +26,7 @@ const favoriteSpotInclude = {
 export class FavoritesService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async addFavorite(spotId: number): Promise<FavoriteWithSpot> {
-    const userId = 1;
-    // TODO: reemplazar este usuario simulado cuando se implemente la autenticación real.
-
+  async addFavorite(userId: number, spotId: number): Promise<FavoriteWithSpot> {
     const spot = await this.prisma.spot.findUnique({
       where: { id: spotId },
       select: { id: true },
@@ -70,10 +67,10 @@ export class FavoritesService {
     });
   }
 
-  async removeFavorite(spotId: number): Promise<{ success: boolean }> {
-    const userId = 1;
-    // TODO: reemplazar este usuario simulado cuando se implemente la autenticación real.
-
+  async removeFavorite(
+    userId: number,
+    spotId: number,
+  ): Promise<{ success: boolean }> {
     const favorite = await this.prisma.favorite.findUnique({
       where: {
         userId_spotId: {
@@ -102,10 +99,7 @@ export class FavoritesService {
     return { success: true };
   }
 
-  async findMyFavorites(): Promise<FavoriteWithSpot[]> {
-    const userId = 1;
-    // TODO: reemplazar este usuario simulado cuando se implemente la autenticación real.
-
+  async findMyFavorites(userId: number): Promise<FavoriteWithSpot[]> {
     return this.prisma.favorite.findMany({
       where: {
         userId,
