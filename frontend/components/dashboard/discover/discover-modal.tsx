@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState, useCallback } from "react";
-import { createPortal } from "react-dom";
+import { ModalPortal } from "@/components/shared/modal-portal";
 import { getCities, type CityRecord } from "@/lib/cities";
 import { getContexts } from "@/lib/contexts";
 import {
@@ -13,23 +13,6 @@ import {
 } from "@/lib/onboarding";
 import { DashboardDiscoverModalSkeleton } from "../loading/dashboard-skeletons";
 import { DiscoverErrorState } from "../error/discover-error-state";
-
-function getModalRoot() {
-  if (typeof document === "undefined") {
-    return null;
-  }
-
-  const rootId = "uspot-modal-root";
-  let root = document.getElementById(rootId);
-
-  if (!root) {
-    root = document.createElement("div");
-    root.id = rootId;
-    document.body.appendChild(root);
-  }
-
-  return root;
-}
 
 type DiscoverSelection = {
   country: string;
@@ -182,173 +165,169 @@ export function DiscoverModal({
     return null;
   }
 
-  const portalRoot = getModalRoot();
+  return (
+    <ModalPortal>
+      <div
+        className={`fixed inset-0 z-[90] flex items-center justify-center px-4 py-6 transition-opacity duration-200 ${
+          open ? "opacity-100" : "opacity-0"
+        }`}
+      >
+        <button
+          type="button"
+          aria-label="Cerrar"
+          onClick={onClose}
+          className="absolute inset-0 cursor-default bg-[#0f172a]/32 backdrop-blur-[5px]"
+        />
 
-  if (!portalRoot) {
-    return null;
-  }
+        <div className="relative z-[100] w-full max-w-5xl rounded-3xl border border-white/40 bg-[#f7f9fb]/90 p-6 shadow-[0_24px_80px_rgba(15,23,42,0.26)] backdrop-blur-xl md:p-8">
+          {contextsError ? (
+            <DiscoverErrorState
+              error={contextsError}
+              onRetry={handleRetryContexts}
+            />
+          ) : showLoadingState ? (
+            <DashboardDiscoverModalSkeleton />
+          ) : (
+            <>
+              <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                <div>
+                  <h2 className="text-2xl font-bold leading-tight text-[#191c1e] md:text-3xl">
+                    ¿Qué espacio quieres explorar ahora?
+                  </h2>
+                  <p className="mt-1 text-sm text-[#556070] md:text-base">
+                    Reelige país, ciudad y espacio sin salir del dashboard.
+                  </p>
+                </div>
 
-  return createPortal(
-    <div
-      className="fixed inset-0 flex items-center justify-center px-4 py-6"
-      style={{ zIndex: 2147483647 }}
-    >
-      <button
-        type="button"
-        aria-label="Cerrar"
-        onClick={onClose}
-        className="absolute inset-0 cursor-default bg-[#0f172a]/32 backdrop-blur-[5px]"
-      />
-
-      <div className="relative z-10 w-full max-w-5xl rounded-3xl border border-white/40 bg-[#f7f9fb]/90 p-6 shadow-[0_24px_80px_rgba(15,23,42,0.26)] backdrop-blur-xl md:p-8">
-        {contextsError ? (
-          <DiscoverErrorState
-            error={contextsError}
-            onRetry={handleRetryContexts}
-          />
-        ) : showLoadingState ? (
-          <DashboardDiscoverModalSkeleton />
-        ) : (
-          <>
-            <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-              <div>
-                <h2 className="text-2xl font-bold leading-tight text-[#191c1e] md:text-3xl">
-                  ¿Qué espacio quieres explorar ahora?
-                </h2>
-                <p className="mt-1 text-sm text-[#556070] md:text-base">
-                  Reelige país, ciudad y espacio sin salir del dashboard.
-                </p>
-              </div>
-
-              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-                <select
-                  value={country}
-                  onChange={(event) => {
-                    setCountry(event.target.value);
-                    setCityId(null);
-                    setContextId(null);
-                  }}
-                  className="rounded-xl border border-[#c3c6d7] bg-white px-3 py-2 text-sm font-medium text-[#191c1e]"
-                >
-                  {COUNTRIES.map((option) => (
-                    <option key={option.code} value={option.name}>
-                      {option.name}
-                    </option>
-                  ))}
-                </select>
-
-                <select
-                  value={cityId ?? ""}
-                  onChange={(event) => {
-                    const nextCityId = Number(event.target.value);
-
-                    if (!Number.isNaN(nextCityId)) {
-                      setCityId(nextCityId);
+                <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                  <select
+                    value={country}
+                    onChange={(event) => {
+                      setCountry(event.target.value);
+                      setCityId(null);
                       setContextId(null);
-                    }
-                  }}
-                  disabled={loadingCities || citiesForCountry.length === 0}
-                  className="rounded-xl border border-[#c3c6d7] bg-white px-3 py-2 text-sm font-medium text-[#191c1e] disabled:cursor-not-allowed disabled:bg-[#edf1f6]"
-                >
-                  <option value="" disabled>
-                    {loadingCities
-                      ? "Cargando ciudades..."
-                      : "Selecciona ciudad"}
-                  </option>
-                  {citiesForCountry.map((city) => (
-                    <option key={city.id} value={city.id}>
-                      {city.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
+                    }}
+                    className="rounded-xl border border-[#c3c6d7] bg-white px-3 py-2 text-sm font-medium text-[#191c1e]"
+                  >
+                    {COUNTRIES.map((option) => (
+                      <option key={option.code} value={option.name}>
+                        {option.name}
+                      </option>
+                    ))}
+                  </select>
 
-            <div className="grid grid-cols-1 gap-x-8 gap-y-6 md:grid-cols-2">
-              {groupedContexts.map((group) => (
-                <section
-                  key={group.type}
-                  className={
-                    group.type === "CITY" ? "md:col-span-2" : undefined
-                  }
-                >
-                  <h3 className="mb-3 text-xs font-bold uppercase tracking-[0.18em] text-[#737686]">
-                    {CONTEXT_TYPE_LABELS[group.type]}
-                  </h3>
+                  <select
+                    value={cityId ?? ""}
+                    onChange={(event) => {
+                      const nextCityId = Number(event.target.value);
 
-                  {loadingContexts ? (
-                    <div className="rounded-xl border border-white bg-white p-3 text-sm text-[#556070] shadow-sm">
-                      Cargando espacios...
-                    </div>
-                  ) : group.contexts.length === 0 ? (
-                    <div className="rounded-xl border border-white bg-white p-3 text-sm text-[#556070] shadow-sm">
-                      Sin espacios disponibles para este tipo.
-                    </div>
-                  ) : (
-                    <div
-                      className={
-                        group.type === "CITY"
-                          ? "grid grid-cols-1 gap-3"
-                          : "grid grid-cols-1 gap-3 sm:grid-cols-2"
+                      if (!Number.isNaN(nextCityId)) {
+                        setCityId(nextCityId);
+                        setContextId(null);
                       }
-                    >
-                      {group.contexts.map((context) => {
-                        const selected = context.id === contextId;
+                    }}
+                    disabled={loadingCities || citiesForCountry.length === 0}
+                    className="rounded-xl border border-[#c3c6d7] bg-white px-3 py-2 text-sm font-medium text-[#191c1e] disabled:cursor-not-allowed disabled:bg-[#edf1f6]"
+                  >
+                    <option value="" disabled>
+                      {loadingCities
+                        ? "Cargando ciudades..."
+                        : "Selecciona ciudad"}
+                    </option>
+                    {citiesForCountry.map((city) => (
+                      <option key={city.id} value={city.id}>
+                        {city.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
 
-                        return (
-                          <button
-                            key={context.id}
-                            type="button"
-                            onClick={() => setContextId(context.id)}
-                            className={`rounded-xl border bg-white p-3 text-left shadow-sm transition ${
-                              selected
-                                ? "border-[#004ac6] ring-2 ring-[#004ac6]/15"
-                                : "border-white hover:border-[#c3c6d7]"
-                            }`}
-                          >
-                            <p className="font-semibold text-[#191c1e]">
-                              {context.name}
-                            </p>
-                            <p className="text-sm text-[#556070]">
-                              {context.description}
-                            </p>
-                          </button>
-                        );
-                      })}
-                    </div>
-                  )}
-                </section>
-              ))}
-            </div>
+              <div className="grid grid-cols-1 gap-x-8 gap-y-6 md:grid-cols-2">
+                {groupedContexts.map((group) => (
+                  <section
+                    key={group.type}
+                    className={
+                      group.type === "CITY" ? "md:col-span-2" : undefined
+                    }
+                  >
+                    <h3 className="mb-3 text-xs font-bold uppercase tracking-[0.18em] text-[#737686]">
+                      {CONTEXT_TYPE_LABELS[group.type]}
+                    </h3>
 
-            <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-center">
-              <button
-                type="button"
-                onClick={onClose}
-                className="rounded-full border border-[#cfd6e6] bg-white px-5 py-2.5 text-sm font-semibold text-[#191c1e] transition hover:bg-[#f7f9fb]"
-              >
-                Cancelar
-              </button>
-              <button
-                type="button"
-                onClick={handleApply}
-                disabled={!selectedCity || !selectedContext}
-                className="rounded-full bg-[#004ac6] px-5 py-2.5 text-sm font-semibold text-white shadow-[0_12px_30px_rgba(0,74,198,0.18)] transition hover:bg-[#2563eb] disabled:cursor-not-allowed disabled:bg-[#9ab4ea]"
-              >
-                Aplicar selección
-              </button>
-              <button
-                type="button"
-                onClick={onRestartSelection}
-                className="rounded-full border border-[#cfd6e6] bg-white px-5 py-2.5 text-sm font-semibold text-[#191c1e] transition hover:bg-[#f7f9fb]"
-              >
-                Reiniciar desde cero
-              </button>
-            </div>
-          </>
-        )}
+                    {loadingContexts ? (
+                      <div className="rounded-xl border border-white bg-white p-3 text-sm text-[#556070] shadow-sm">
+                        Cargando espacios...
+                      </div>
+                    ) : group.contexts.length === 0 ? (
+                      <div className="rounded-xl border border-white bg-white p-3 text-sm text-[#556070] shadow-sm">
+                        Sin espacios disponibles para este tipo.
+                      </div>
+                    ) : (
+                      <div
+                        className={
+                          group.type === "CITY"
+                            ? "grid grid-cols-1 gap-3"
+                            : "grid grid-cols-1 gap-3 sm:grid-cols-2"
+                        }
+                      >
+                        {group.contexts.map((context) => {
+                          const selected = context.id === contextId;
+
+                          return (
+                            <button
+                              key={context.id}
+                              type="button"
+                              onClick={() => setContextId(context.id)}
+                              className={`rounded-xl border bg-white p-3 text-left shadow-sm transition ${
+                                selected
+                                  ? "border-[#004ac6] ring-2 ring-[#004ac6]/15"
+                                  : "border-white hover:border-[#c3c6d7]"
+                              }`}
+                            >
+                              <p className="font-semibold text-[#191c1e]">
+                                {context.name}
+                              </p>
+                              <p className="text-sm text-[#556070]">
+                                {context.description}
+                              </p>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </section>
+                ))}
+              </div>
+
+              <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-center">
+                <button
+                  type="button"
+                  onClick={onClose}
+                  className="rounded-full border border-[#cfd6e6] bg-white px-5 py-2.5 text-sm font-semibold text-[#191c1e] transition hover:bg-[#f7f9fb]"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="button"
+                  onClick={handleApply}
+                  disabled={!selectedCity || !selectedContext}
+                  className="rounded-full bg-[#004ac6] px-5 py-2.5 text-sm font-semibold text-white shadow-[0_12px_30px_rgba(0,74,198,0.18)] transition hover:bg-[#2563eb] disabled:cursor-not-allowed disabled:bg-[#9ab4ea]"
+                >
+                  Aplicar selección
+                </button>
+                <button
+                  type="button"
+                  onClick={onRestartSelection}
+                  className="rounded-full border border-[#cfd6e6] bg-white px-5 py-2.5 text-sm font-semibold text-[#191c1e] transition hover:bg-[#f7f9fb]"
+                >
+                  Reiniciar desde cero
+                </button>
+              </div>
+            </>
+          )}
+        </div>
       </div>
-    </div>,
-    portalRoot,
+    </ModalPortal>
   );
 }
